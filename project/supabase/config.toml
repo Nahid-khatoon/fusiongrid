@@ -1,0 +1,2 @@
+[functions.document-signed-url]
+verify_jwt = true
