@@ -13,7 +13,7 @@ import type {
 } from '@/types';
 
 export const citizen: Citizen = {
-  name: 'Rahul Sharma',
+  name: 'Citizen Applicant',
   citizenId: 'MH-CIT-2026-00125',
   mobile: '9876543210',
   dob: '2003-08-15',
@@ -463,12 +463,20 @@ export const historyEvents = [
 // ─── Officer Portal Data ───
 
 export const officerInfo = {
-  name: 'Nahid Shams',
+  name: 'Vikramaditya Patil',
   department: 'Social Welfare Department',
   email: 'officer@fusiongrid.gov.in',
   id: 'MH-OFF-2026-00042',
-  designation: 'Assistant Director',
+  designation: 'Assistant Director & Verification Officer',
   district: 'Pune Division',
+};
+
+export const adminInfo = {
+  name: 'Nahid Shams',
+  role: 'admin' as const,
+  id: 'MH-ADM-ROOT-001',
+  email: 'admin@fusiongrid.gov.in',
+  designation: 'Root Control Authority & State Administrator',
 };
 
 export const officerMetrics = {
@@ -482,7 +490,7 @@ export const queueItems: QueueItem[] = [
   {
     id: 'q1',
     applicationId: 'MH-SCH-2026-00125',
-    citizenName: 'Rahul Sharma',
+    citizenName: 'Citizen Applicant',
     citizenId: 'MH-CIT-2026-00125',
     service: 'MahaScholarship',
     stage: 'Officer Review',
@@ -496,7 +504,7 @@ export const queueItems: QueueItem[] = [
   {
     id: 'q2',
     applicationId: 'MH-EDU-2026-00098',
-    citizenName: 'Rahul Sharma',
+    citizenName: 'Citizen Applicant',
     citizenId: 'MH-CIT-2026-00125',
     service: 'Student Education Benefit',
     stage: 'Income Verification',
@@ -566,7 +574,7 @@ export const queueItems: QueueItem[] = [
   {
     id: 'q7',
     applicationId: 'MH-INC-2026-00231',
-    citizenName: 'Rahul Sharma',
+    citizenName: 'Citizen Applicant',
     citizenId: 'MH-CIT-2026-00125',
     service: 'Income Certificate',
     stage: 'Completed',
@@ -598,7 +606,7 @@ export const initialAuditEvents: AuditEvent[] = [
     id: 'ae1',
     applicationId: 'MH-SCH-2026-00125',
     action: 'Application Submitted',
-    actor: 'Rahul Sharma',
+    actor: 'Citizen Applicant',
     actorRole: 'citizen',
     detail: 'MahaScholarship application submitted via FusionGrid portal',
     timestamp: '2026-08-18 10:30 AM',
@@ -630,7 +638,7 @@ export const initialAuditEvents: AuditEvent[] = [
     action: 'Student Enrollment Verified',
     actor: 'Education Department API',
     actorRole: 'officer',
-    detail: 'Enrollment verification passed — B.Tech CE active at COEP',
+    detail: 'Enrollment verification passed — Academic enrollment active',
     timestamp: '2026-08-18 10:36 AM',
     type: 'verify',
   },
@@ -678,7 +686,7 @@ export const initialAuditEvents: AuditEvent[] = [
     id: 'ae9',
     applicationId: 'MH-EDU-2026-00098',
     action: 'Application Submitted',
-    actor: 'Rahul Sharma',
+    actor: 'Citizen Applicant',
     actorRole: 'citizen',
     detail: 'Education Benefit application submitted via FusionGrid portal',
     timestamp: '2026-08-20 09:00 AM',
@@ -700,7 +708,7 @@ export const slaItems: SlaItem[] = [
   {
     applicationId: 'MH-SCH-2026-00125',
     serviceName: 'MahaScholarship',
-    citizenName: 'Rahul Sharma',
+    citizenName: 'Citizen Applicant',
     submittedAt: '2026-08-18',
     slaDeadline: '2026-08-24',
     slaStatus: 'due_soon',
@@ -710,7 +718,7 @@ export const slaItems: SlaItem[] = [
   {
     applicationId: 'MH-EDU-2026-00098',
     serviceName: 'Student Education Benefit',
-    citizenName: 'Rahul Sharma',
+    citizenName: 'Citizen Applicant',
     submittedAt: '2026-08-20',
     slaDeadline: '2026-09-04',
     slaStatus: 'on_track',
@@ -770,7 +778,7 @@ export const slaItems: SlaItem[] = [
   {
     applicationId: 'MH-INC-2026-00231',
     serviceName: 'Income Certificate',
-    citizenName: 'Rahul Sharma',
+    citizenName: 'Citizen Applicant',
     submittedAt: '2026-07-22',
     slaDeadline: '2026-07-31',
     slaStatus: 'on_track',

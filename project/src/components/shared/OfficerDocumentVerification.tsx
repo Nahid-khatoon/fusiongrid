@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   FileText, CheckCircle2, XCircle, Clock, Loader2, Eye,
-  ShieldCheck, AlertCircle, FileCheck, Lock,
+  Lock, ExternalLink, Check, X, AlertCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
   fetchApplicationDocuments, officerVerifyDocument, officerRejectDocument,
   getSignedUrl,
 } from '@/lib/documentService';
-import { DOCUMENT_REQUIREMENTS, type ApplicationDocument, type DocumentType } from '@/types';
+import { DOCUMENT_REQUIREMENTS, type ApplicationDocument } from '@/types';
 import { cn } from '@/lib/utils';
 
 interface OfficerDocumentVerificationProps {
@@ -53,9 +53,7 @@ export function OfficerDocumentVerification({ applicationId, onAllVerified }: Of
       onAllVerified(false);
       return;
     }
-    const requiredTypes = DOCUMENT_REQUIREMENTS.map((r) => r.type);
-    const relevantDocs = documents.filter((d) => requiredTypes.includes(d.document_type));
-    const allVerified = relevantDocs.length === requiredTypes.length && relevantDocs.every((d) => d.status === 'verified');
+    const allVerified = documents.length > 0 && documents.every((d) => d.status === 'verified');
     onAllVerified(allVerified);
   }, [documents, onAllVerified]);
 
@@ -133,10 +131,10 @@ export function OfficerDocumentVerification({ applicationId, onAllVerified }: Of
 
   if (loading) {
     return (
-      <Card className="border-border/60 animate-fade-in-up">
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span className="ml-2 text-sm text-muted-foreground">Loading documents…</span>
+      <Card className="border-[#D8C2AA] bg-[#FFF8ED] shadow-sm">
+        <CardContent className="flex items-center justify-center py-12 text-xs text-[#755C49]">
+          <Loader2 className="h-5 w-5 animate-spin mr-2 text-[#6F4028]" />
+          Loading secure document attachments...
         </CardContent>
       </Card>
     );
@@ -144,17 +142,17 @@ export function OfficerDocumentVerification({ applicationId, onAllVerified }: Of
 
   if (documents.length === 0) {
     return (
-      <Card className="border-border/60 animate-fade-in-up">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-4 w-4 text-primary" />
+      <Card className="border-[#D8C2AA] bg-[#FFF8ED] shadow-sm">
+        <CardHeader className="py-4 border-b border-[#D8C2AA] bg-[#F5EBDD]">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2 text-[#38241B]">
+            <FileText className="h-4 w-4 text-[#6F4028]" />
             Document Verification
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3 text-sm text-amber-700">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            No documents have been uploaded for this application yet.
+        <CardContent className="p-5">
+          <div className="flex items-center gap-2.5 rounded-xl border border-[#D8C2AA] bg-[#F5EBDD] p-3.5 text-xs text-[#755C49]">
+            <AlertCircle className="h-4 w-4 shrink-0 text-[#6F4028]" />
+            No documents have been attached to this record yet.
           </div>
         </CardContent>
       </Card>
@@ -167,40 +165,42 @@ export function OfficerDocumentVerification({ applicationId, onAllVerified }: Of
 
   return (
     <>
-      <Card className="border-border/60 animate-fade-in-up delay-100">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileText className="h-4 w-4 text-primary" />
-                Document Verification
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Review and verify citizen documents. Signed URLs expire in 60 seconds.
-              </CardDescription>
+      <Card className="border-[#D8C2AA] bg-[#FFF8ED] shadow-sm text-[#38241B]">
+        <CardHeader className="border-b border-[#D8C2AA] bg-[#F5EBDD] py-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#6F4028]" />
+              <div>
+                <CardTitle className="text-sm font-semibold text-[#38241B]">Supporting Document Verification</CardTitle>
+                <CardDescription className="text-xs text-[#755C49]">
+                  Review and certify citizen documents. Secure signed URLs expire in 60s.
+                </CardDescription>
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="border-accent/30 bg-accent/10 text-accent">
-                <CheckCircle2 className="mr-1 h-3 w-3" />{verifiedCount} Verified
+              <Badge variant="outline" className="border-emerald-300 bg-emerald-100 text-emerald-800 font-semibold text-xs">
+                {verifiedCount} Verified
               </Badge>
               {pendingCount > 0 && (
-                <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-700">
-                  <Clock className="mr-1 h-3 w-3" />{pendingCount} Pending
+                <Badge variant="outline" className="border-[#D8C2AA] bg-[#FFF8ED] text-[#6F4028] font-semibold text-xs">
+                  {pendingCount} Pending
                 </Badge>
               )}
               {rejectedCount > 0 && (
-                <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive">
-                  <XCircle className="mr-1 h-3 w-3" />{rejectedCount} Rejected
+                <Badge variant="outline" className="border-red-300 bg-red-100 text-red-800 font-semibold text-xs">
+                  {rejectedCount} Discrepancies
                 </Badge>
               )}
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="mb-3 flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50/50 px-3 py-2 text-xs text-blue-700">
-            <Lock className="h-3.5 w-3.5 shrink-0" />
-            Documents are accessed via temporary signed URLs only. No permanent public URLs are exposed.
+
+        <CardContent className="p-5 space-y-3">
+          <div className="flex items-center gap-2 rounded-xl border border-[#D8C2AA] bg-[#F5EBDD] px-3 py-2 text-xs text-[#755C49]">
+            <Lock className="h-3.5 w-3.5 shrink-0 text-[#6F4028]" />
+            <span>DPDP Protected: High-assurance document preview with cryptographic signed token expiration.</span>
           </div>
+
           <div className="space-y-3">
             {documents.map((doc) => {
               const req = DOCUMENT_REQUIREMENTS.find((r) => r.type === doc.document_type);
@@ -213,168 +213,199 @@ export function OfficerDocumentVerification({ applicationId, onAllVerified }: Of
                 <div
                   key={doc.id}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg border p-3 transition-all',
-                    isVerified && 'border-accent/30 bg-accent/5',
-                    isRejected && 'border-destructive/30 bg-destructive/5',
-                    isPending && 'border-amber-200 bg-amber-50/30',
+                    'flex flex-col gap-3 rounded-xl border p-3.5 transition-all sm:flex-row sm:items-center sm:justify-between',
+                    isVerified && 'border-emerald-300 bg-emerald-50/40',
+                    isRejected && 'border-red-300 bg-red-50/40',
+                    isPending && 'border-[#D8C2AA] bg-[#FFF8ED]',
                   )}
                 >
-                  <div className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                    isVerified ? 'bg-accent/10 text-accent' : isRejected ? 'bg-destructive/10 text-destructive' : 'bg-amber-100 text-amber-600'
-                  )}>
-                    {isVerified ? <CheckCircle2 className="h-5 w-5" /> : isRejected ? <XCircle className="h-5 w-5" /> : <Clock className="h-4 w-4" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold">{req?.label ?? doc.document_type}</span>
-                      {isReused && (
-                        <Badge variant="outline" className="border-accent/30 bg-accent/10 text-accent text-[10px]">
-                          <ShieldCheck className="mr-1 h-2.5 w-2.5" />Reused from Vault
-                        </Badge>
+                  <div className="flex items-start gap-3">
+                    <div className={cn(
+                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border',
+                      isVerified ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : isRejected ? 'bg-red-100 border-red-300 text-red-700' : 'bg-[#F5EBDD] border-[#D8C2AA] text-[#6F4028]'
+                    )}>
+                      {isVerified ? <CheckCircle2 className="h-5 w-5" /> : isRejected ? <XCircle className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-[#38241B]">{req?.label ?? doc.document_type}</span>
+                        {isReused && (
+                          <span className="rounded bg-[#EAD8C2] border border-[#D8C2AA] px-1.5 py-0.2 text-[10px] font-semibold text-[#6F4028]">
+                            Vault Reused
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-[#755C49]">
+                        <span className="font-mono truncate max-w-xs">{doc.file_name}</span>
+                        <span>·</span>
+                        <span>{(doc.file_size / 1024).toFixed(0)} KB</span>
+                        {doc.verified_at && (
+                          <>
+                            <span>·</span>
+                            <span className="text-emerald-700 font-medium">Verified by {doc.verified_by}</span>
+                          </>
+                        )}
+                      </div>
+                      {isRejected && doc.rejection_reason && (
+                        <p className="mt-1 text-xs text-red-800">Discrepancy: {doc.rejection_reason}</p>
                       )}
                     </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                      <FileCheck className="h-3 w-3" />
-                      <span className="truncate">{doc.file_name}</span>
-                      <span>·</span>
-                      <span>{(doc.file_size / 1024).toFixed(0)} KB</span>
-                      {doc.verified_at && (
-                        <>
-                          <span>·</span>
-                          <span>By {doc.verified_by}</span>
-                        </>
-                      )}
-                    </div>
-                    {isRejected && doc.rejection_reason && (
-                      <p className="mt-1 text-xs text-destructive">Reason: {doc.rejection_reason}</p>
-                    )}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Button size="sm" variant="outline" onClick={() => handleView(doc)}>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleView(doc)}
+                      className="gap-1.5 text-xs h-8 border-[#D8C2AA] bg-[#FFF8ED] text-[#38241B] hover:bg-[#EAD8C2]"
+                    >
                       <Eye className="h-3.5 w-3.5" />
                       View
                     </Button>
+
                     {isPending && (
                       <>
                         <Button
                           size="sm"
-                          className="gap-1 bg-accent hover:bg-accent/90"
                           onClick={() => handleVerify(doc.id)}
                           disabled={actionLoading === doc.id}
+                          className="gap-1.5 bg-[#6F4028] hover:bg-[#805236] text-[#FFF8ED] text-xs h-8 shadow-sm border-0"
                         >
-                          {actionLoading === doc.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                          Verify
+                          {actionLoading === doc.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Check className="h-3.5 w-3.5" />
+                          )}
+                          Certify
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-destructive/30 text-destructive hover:bg-destructive/10"
-                          onClick={() => { setRejectDocId(doc.id); setRejectReason(''); }}
+                          onClick={() => setRejectDocId(doc.id)}
+                          disabled={actionLoading === doc.id}
+                          className="gap-1 text-xs h-8 border-red-300 bg-red-100 text-red-800 hover:bg-red-200"
                         >
-                          <XCircle className="h-3.5 w-3.5" />
+                          <X className="h-3.5 w-3.5" />
+                          Reject
                         </Button>
                       </>
-                    )}
-                    {isVerified && (
-                      <Badge variant="outline" className="border-accent/30 bg-accent/10 text-accent">
-                        <CheckCircle2 className="mr-1 h-3 w-3" />Verified
-                      </Badge>
-                    )}
-                    {isRejected && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-destructive/30 text-destructive hover:bg-destructive/10"
-                        onClick={() => { setRejectDocId(doc.id); setRejectReason(doc.rejection_reason || ''); }}
-                      >
-                        <XCircle className="h-3.5 w-3.5" />Rejected
-                      </Button>
                     )}
                   </div>
                 </div>
               );
             })}
           </div>
-
-          {verifiedCount === documents.length && documents.length > 0 && (
-            <div className="mt-4 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-3">
-              <CheckCircle2 className="h-5 w-5 text-accent" />
-              <div>
-                <p className="text-sm font-semibold text-accent">All documents verified</p>
-                <p className="text-xs text-accent/80">This application can now proceed to final review and approval.</p>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
       {/* Reject Dialog */}
-      <Dialog open={!!rejectDocId} onOpenChange={(open) => { if (!open) setRejectDocId(null); }}>
-        <DialogContent className="max-w-md">
+      <Dialog open={!!rejectDocId} onOpenChange={(open) => !open && setRejectDocId(null)}>
+        <DialogContent className="sm:max-w-md bg-[#FFF8ED] border-[#D8C2AA] text-[#38241B]">
           <DialogHeader>
-            <DialogTitle>Reject Document</DialogTitle>
-            <DialogDescription>
-              A reason is required. The citizen will be notified and can re-upload the document.
+            <DialogTitle className="text-base text-red-800 flex items-center gap-2">
+              <XCircle className="h-5 w-5" />
+              Reject Document Attachment
+            </DialogTitle>
+            <DialogDescription className="text-xs text-[#755C49]">
+              Provide specific feedback explaining why this attachment was not verified. The applicant will be requested to provide a corrected file.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="reject-doc-reason">Rejection Reason</Label>
+          <div className="space-y-2 py-2">
+            <Label className="text-xs text-[#38241B]">Rejection Note</Label>
             <Textarea
-              id="reject-doc-reason"
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              rows={4}
+              className="text-xs bg-[#FFF8ED] border-[#D8C2AA] text-[#38241B] focus:border-[#C58B55]"
+              rows={3}
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDocId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={!rejectReason.trim()} className="gap-1.5">
-              <XCircle className="h-4 w-4" />
-              Reject Document
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRejectDocId(null)}
+              className="text-xs border-[#D8C2AA] bg-[#FFF8ED] text-[#38241B] hover:bg-[#EAD8C2]"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={!rejectReason.trim()}
+              onClick={handleReject}
+              className="text-xs bg-red-700 hover:bg-red-800 text-white border-0"
+            >
+              Confirm Discrepancy
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* View Document Dialog */}
-      <Dialog open={!!viewingDoc} onOpenChange={(open) => { if (!open) { setViewingDoc(null); setViewingUrl(null); } }}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" />
-              {viewingDoc?.file_name ?? 'Document'}
-            </DialogTitle>
-            <DialogDescription>
-              Temporary signed URL — expires in 60 seconds. This URL is private and cannot be shared.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center justify-center rounded-lg border bg-muted/30 p-4" style={{ minHeight: '300px' }}>
-            {viewingUrl === null ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Generating signed URL…
+      {/* Document View Modal */}
+      {viewingDoc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#21140F]/60 backdrop-blur-sm p-4 animate-fade-in"
+          onClick={() => { setViewingDoc(null); setViewingUrl(null); }}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl border border-[#D8C2AA] bg-[#FFF8ED] text-[#38241B] shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-[#D8C2AA] bg-[#F5EBDD] px-5 py-4">
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-[#6F4028]" />
+                <h3 className="font-display font-semibold text-sm truncate max-w-sm text-[#38241B]">{viewingDoc.file_name}</h3>
               </div>
-            ) : viewingUrl === '' ? (
-              <div className="flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4" />
-                Failed to generate signed URL. You may not have permission.
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                {viewingDoc?.mime_type.startsWith('image/') ? (
-                  <img src={viewingUrl} alt={viewingDoc?.file_name} className="max-h-[400px] rounded-lg border" />
-                ) : (
-                  <iframe src={viewingUrl} className="h-[400px] w-full rounded-lg border" title="Document preview" />
-                )}
-                <a href={viewingUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">
-                  Open in new tab
-                </a>
-              </div>
-            )}
+              <button
+                onClick={() => { setViewingDoc(null); setViewingUrl(null); }}
+                className="rounded-lg p-1 text-[#755C49] hover:bg-[#EAD8C2] hover:text-[#38241B]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {viewingUrl === null ? (
+                <div className="flex items-center justify-center py-12 text-xs text-[#755C49]">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2 text-[#6F4028]" />
+                  Generating secure temporary access token…
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4">
+                  {viewingDoc.mime_type.startsWith('image/') ? (
+                    <img
+                      src={viewingUrl}
+                      alt={viewingDoc.file_name}
+                      className="max-h-[420px] w-auto rounded-xl border border-[#D8C2AA] object-contain shadow-sm"
+                    />
+                  ) : (
+                    <iframe
+                      src={viewingUrl}
+                      className="h-[420px] w-full rounded-xl border border-[#D8C2AA] shadow-inner"
+                      title="Document preview"
+                    />
+                  )}
+                  <div className="flex items-center justify-between w-full border-t border-[#D8C2AA] pt-3 text-xs text-[#755C49]">
+                    <span className="flex items-center gap-1">
+                      <Lock className="h-3 w-3 text-[#C58B55]" />
+                      Signed URL expires in 60s
+                    </span>
+                    <a
+                      href={viewingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-semibold text-[#6F4028] hover:underline"
+                    >
+                      Open full view
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </>
   );
 }

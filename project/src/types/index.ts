@@ -288,7 +288,15 @@ export interface ApiFailureState {
   history: { state: RetryState; message: string; timestamp: string }[];
 }
 
-// ─── Security Simulation ───
+// ─── Security Simulation & Authentication Stages ───
+
+export type AuthStage =
+  | 'unauthenticated'
+  | 'password_authenticated'
+  | 'passkey_enrollment_required'
+  | 'biometric_verification_pending'
+  | 'passkey_verified'
+  | 'fully_authorized';
 
 export interface SecuritySession {
   token: string;
@@ -297,6 +305,10 @@ export interface SecuritySession {
   expiresAt: string;
   rateLimitRemaining: number;
   rateLimitTotal: number;
+  authStage: AuthStage;
+  requiresBiometrics: boolean;
+  passkeyVerified: boolean;
+  biometricEnrolled: boolean;
 }
 
 export interface SecurityCheckResult {
@@ -307,7 +319,20 @@ export interface SecurityCheckResult {
 
 // ─── Document Upload & Verification ───
 
-export type DocumentType = 'identity_proof' | 'income_certificate' | 'student_certificate' | 'bank_proof';
+export type DocumentType =
+  | 'identity_proof'
+  | 'income_certificate'
+  | 'student_certificate'
+  | 'bank_proof'
+  | 'domicile_certificate'
+  | 'caste_certificate'
+  | 'salary_slip'
+  | 'land_record'
+  | 'previous_marksheet'
+  | 'medical_estimate'
+  | 'ration_card'
+  | 'welfare_proof';
+
 export type DocumentStatus = 'pending' | 'verified' | 'rejected';
 
 export interface ApplicationDocument {
@@ -338,18 +363,29 @@ export interface VaultDocument {
   file_name: string;
   file_size: number;
   mime_type: string;
-  verified_at: string;
-  verified_by: string;
+  status?: DocumentStatus;
+  verified_at: string | null;
+  verified_by: string | null;
   source_application_id: string | null;
   is_valid: boolean;
+  validity_period?: string;
+  expiry_date?: string | null;
   created_at: string;
 }
 
 export const DOCUMENT_REQUIREMENTS: { type: DocumentType; label: string; description: string }[] = [
   { type: 'identity_proof', label: 'Identity Proof', description: 'Aadhaar card, PAN card, or passport' },
   { type: 'income_certificate', label: 'Income Certificate', description: 'Official income certificate or salary slips' },
-  { type: 'student_certificate', label: 'Student/College Certificate', description: 'Bonafide certificate or admission letter' },
-  { type: 'bank_proof', label: 'Bank Account Proof', description: 'Bank passbook copy or account statement' },
+  { type: 'domicile_certificate', label: 'Domicile Certificate', description: 'State domicile certificate issued by Revenue Authority' },
+  { type: 'caste_certificate', label: 'Caste / Validity Certificate', description: 'Statutory caste certificate with validity number' },
+  { type: 'student_certificate', label: 'Student / College Certificate', description: 'Bonafide certificate or admission letter' },
+  { type: 'bank_proof', label: 'Bank Account Proof', description: 'Bank passbook copy or NPCI mandate' },
+  { type: 'salary_slip', label: 'Salary Slips / Income Proof', description: 'Last 3 months salary slips or employer statement' },
+  { type: 'land_record', label: '7/12 Extract / Talathi Report', description: 'MahaBhulekh agricultural land revenue record' },
+  { type: 'previous_marksheet', label: 'Previous Academic Marksheet', description: 'Preceding academic year score card or marksheet' },
+  { type: 'medical_estimate', label: 'Hospital Treatment Estimate', description: 'Empanelled government or network hospital diagnosis letter' },
+  { type: 'ration_card', label: 'Ration Card (BPL / Priority)', description: 'Civil Supplies ration card establishing family eligibility' },
+  { type: 'welfare_proof', label: 'Welfare Category Certificate', description: 'Disability UDID, Senior Citizen proof, or Widow affidavit' },
 ];
 
 export const ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];

@@ -1,10 +1,49 @@
-import { createContext, useContext, useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect, useCallback, ReactNode } from 'react';
 import type {
   Role, Application, NotificationItem, ConsentRecord, AuditEvent,
   SystemEvent, EventType, ApiFailureState, RetryState, SecuritySession,
+  AuthStage,
 } from '@/types';
 import { officerInfo } from '@/data/mockData';
 import { supabase } from '@/lib/supabase';
+import { getAccountSecurityPolicy } from '@/lib/webauthnService';
+import { officerService } from '@/lib/officerService';
+
+const STORAGE_KEY_AUTH_USER = 'fusiongrid_auth_user_v2';
+const STORAGE_KEY_AUTH_SESSION = 'fusiongrid_auth_session_v2';
+
+function persistSession(user: AuthUser | null, session: SecuritySession | null) {
+  try {
+    if (user && session) {
+      sessionStorage.setItem(STORAGE_KEY_AUTH_USER, JSON.stringify(user));
+      sessionStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(session));
+    } else {
+      sessionStorage.removeItem(STORAGE_KEY_AUTH_USER);
+      sessionStorage.removeItem(STORAGE_KEY_AUTH_SESSION);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function loadPersistedSession(): { user: AuthUser | null; session: SecuritySession | null } {
+  try {
+    const rawUser = sessionStorage.getItem(STORAGE_KEY_AUTH_USER);
+    const rawSession = sessionStorage.getItem(STORAGE_KEY_AUTH_SESSION);
+    if (rawUser && rawSession) {
+      const parsedSession: SecuritySession = JSON.parse(rawSession);
+      const parsedUser: AuthUser = JSON.parse(rawUser);
+      if (new Date(parsedSession.expiresAt).getTime() > Date.now()) {
+        return { user: parsedUser, session: parsedSession };
+      }
+      sessionStorage.removeItem(STORAGE_KEY_AUTH_USER);
+      sessionStorage.removeItem(STORAGE_KEY_AUTH_SESSION);
+    }
+  } catch {
+    // ignore
+  }
+  return { user: null, session: null };
+}
 
 export interface CitizenProfile {
   id: string;
@@ -28,7 +67,17 @@ interface AuthUser {
 
 interface AppState {
   user: AuthUser | null;
-  login: (role: Role) => void;
+  login: (
+    role: Role,
+    customUser?: Partial<AuthUser>,
+    options?: {
+      authStage?: AuthStage;
+      requiresBiometrics?: boolean;
+      passkeyVerified?: boolean;
+      biometricEnrolled?: boolean;
+    }
+  ) => void;
+  completeBiometricAuthorization: () => void;
   logout: () => void;
   citizenProfile: CitizenProfile | null;
   authLoading: boolean;
@@ -152,7 +201,8 @@ function mapDbApplication(row: Record<string, unknown>): Application {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const initialPersisted = useRef(loadPersistedSession()).current;
+  const [user, setUser] = useState<AuthUser | null>(initialPersisted.user);
   const [citizenProfile, setCitizenProfile] = useState<CitizenProfile | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -183,7 +233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return [];
     }
   });
-  const [session, setSession] = useState<SecuritySession | null>(null);
+  const [session, setSession] = useState<SecuritySession | null>(initialPersisted.session);
   const [rateLimitRemaining, setRateLimitRemaining] = useState(100);
   const rateLimitTotal = 100;
   const retryTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -263,29 +313,112 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback((role: Role) => {
+  const login = useCallback((
+    role: Role,
+    customUser?: Partial<AuthUser>,
+    options?: {
+      authStage?: AuthStage;
+      requiresBiometrics?: boolean;
+      passkeyVerified?: boolean;
+      biometricEnrolled?: boolean;
+    }
+  ) => {
     const users: Record<Role, AuthUser> = {
       citizen: { role: 'citizen', name: 'Citizen', id: '' },
-      officer: { role: 'officer', name: officerInfo.name, id: officerInfo.id, department: officerInfo.department },
-      admin: { role: 'admin', name: 'Administrator', id: 'MH-ADM-2026-00001' },
+      officer: {
+        role: 'officer',
+        name: customUser?.name || officerInfo.name,
+        id: customUser?.id || officerInfo.id,
+        department: customUser?.department || officerInfo.department,
+        email: customUser?.email || officerInfo.email,
+      },
+      admin: {
+        role: 'admin',
+        name: 'Nahid Shams',
+        id: 'MH-ADM-ROOT-001',
+        email: 'admin@fusiongrid.gov.in',
+      },
     };
-    setUser(users[role]);
+    const targetUser = {
+      ...users[role],
+      ...(customUser || {}),
+      role, // Role cannot be spoofed
+    };
+    setUser(targetUser);
     const now = new Date();
     const exp = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-    setSession({
+
+    const requiresBio = options?.requiresBiometrics ?? (role === 'admin' || role === 'officer');
+    const stage: AuthStage = options?.authStage ?? (requiresBio ? (options?.biometricEnrolled ? 'biometric_verification_pending' : 'passkey_enrollment_required') : 'fully_authorized');
+    const passkeyVerified = options?.passkeyVerified ?? (stage === 'fully_authorized' || stage === 'passkey_verified');
+    const biometricEnrolled = options?.biometricEnrolled ?? (stage === 'fully_authorized' || stage === 'passkey_verified');
+
+    const newSession: SecuritySession = {
       token: generateToken(),
       role,
       issuedAt: now.toISOString(),
       expiresAt: exp.toISOString(),
       rateLimitRemaining: rateLimitTotal,
       rateLimitTotal,
-    });
+      authStage: stage,
+      requiresBiometrics: requiresBio,
+      passkeyVerified,
+      biometricEnrolled,
+    };
+    setSession(newSession);
+    persistSession(targetUser, newSession);
     setRateLimitRemaining(rateLimitTotal);
-    emitEvent('ApplicationSubmitted', `Session established for ${role} role`, undefined, users[role].name);
-    if (role === 'officer' || role === 'admin') {
-      fetchAllApplications();
+    emitEvent('ApplicationSubmitted', `Session established for ${role} role (stage: ${stage})`, undefined, targetUser.name);
+
+    if (stage === 'fully_authorized') {
+      if (role === 'officer' || role === 'admin') {
+        fetchAllApplications();
+      } else if (role === 'citizen' && targetUser.id) {
+        fetchApplications(targetUser.id);
+        supabase
+          .from('citizens')
+          .select('*')
+          .eq('id', targetUser.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (data) {
+              setCitizenProfile(data as CitizenProfile);
+            }
+          });
+      }
     }
-  }, [emitEvent, fetchAllApplications]);
+  }, [emitEvent, fetchAllApplications, fetchApplications]);
+
+  const completeBiometricAuthorization = useCallback(() => {
+    setSession((prev) => {
+      if (!prev) return null;
+      const updated: SecuritySession = {
+        ...prev,
+        authStage: 'fully_authorized',
+        passkeyVerified: true,
+        biometricEnrolled: true,
+      };
+      if (user) {
+        persistSession(user, updated);
+      }
+      return updated;
+    });
+    if (user?.role === 'officer' || user?.role === 'admin') {
+      fetchAllApplications();
+    } else if (user?.role === 'citizen' && user.id) {
+      fetchApplications(user.id);
+      supabase
+        .from('citizens')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            setCitizenProfile(data as CitizenProfile);
+          }
+        });
+    }
+  }, [user, fetchAllApplications, fetchApplications]);
 
   const logout = useCallback(() => {
     supabase.auth.signOut().catch(() => {});
@@ -295,6 +428,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setCitizenMap({});
     setConsents([]);
     setSession(null);
+    persistSession(null, null);
     retryTimers.current.forEach((t) => clearTimeout(t));
     retryTimers.current = [];
   }, []);
@@ -655,11 +789,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [rateLimitRemaining]);
 
   const checkRoleAccess = useCallback((requiredRole: Role): boolean => {
-    if (!user) return false;
+    if (!user || !session) return false;
+    // Strict requirement: Protected roles demand fully authorized session stage
+    if (session.authStage !== 'fully_authorized') return false;
     if (requiredRole === 'admin') return user.role === 'admin';
     if (requiredRole === 'officer') return user.role === 'officer' || user.role === 'admin';
     return true;
-  }, [user]);
+  }, [user, session]);
 
   const checkConsent = useCallback((department: string): boolean => {
     return consents.some((c) => c.department === department && c.status === 'granted');
@@ -713,63 +849,279 @@ return { error: null };
 
 }, []);
   const signInCitizen = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     if (error) return { error: error.message };
+    if (!data.user) return { error: 'Authentication failed. Please try again.' };
+
+    const { data: profile } = await supabase
+      .from('citizens')
+      .select('*')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    const citizenUser: AuthUser = {
+      role: 'citizen',
+      name: (profile as CitizenProfile)?.full_name || data.user.email?.split('@')[0] || 'Citizen',
+      id: data.user.id,
+      email: data.user.email,
+    };
+
+    if (profile) {
+      setCitizenProfile(profile as CitizenProfile);
+    }
+
+    const policy = await getAccountSecurityPolicy(email.trim(), 'citizen');
+    const stage: AuthStage = policy.requiresBiometrics
+      ? (policy.hasRegisteredPasskey ? 'biometric_verification_pending' : 'passkey_enrollment_required')
+      : 'fully_authorized';
+
+    const now = new Date();
+    const exp = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const newSession: SecuritySession = {
+      token: generateToken(),
+      role: 'citizen',
+      issuedAt: now.toISOString(),
+      expiresAt: exp.toISOString(),
+      rateLimitRemaining: rateLimitTotal,
+      rateLimitTotal,
+      authStage: stage,
+      requiresBiometrics: policy.requiresBiometrics,
+      passkeyVerified: !policy.requiresBiometrics,
+      biometricEnrolled: policy.hasRegisteredPasskey,
+    };
+
+    setUser(citizenUser);
+    setSession(newSession);
+    persistSession(citizenUser, newSession);
+
+    if (stage === 'fully_authorized') {
+      fetchApplications(data.user.id);
+    }
+
     return { error: null };
-  }, []);
+  }, [fetchApplications]);
 
   // Restore session on mount and listen for auth changes
   useEffect(() => {
     let mounted = true;
 
-    (async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!mounted) return;
-      if (authUser) {
-        const { data: profile } = await supabase
-          .from('citizens')
-          .select('*')
-          .eq('id', authUser.id)
-          .maybeSingle();
-        if (mounted && profile) {
-          setCitizenProfile(profile as CitizenProfile);
-          setUser({
-            role: 'citizen',
-            name: (profile as CitizenProfile).full_name || authUser.email || 'Citizen',
-            id: authUser.id,
-            email: authUser.email,
-          });
-          fetchApplications(authUser.id);
+    const syncAuthUser = async (authUser: { id: string; email?: string }) => {
+      const email = authUser.email?.trim().toLowerCase() || '';
+      const existing = loadPersistedSession();
+      const currentStage = existing.session?.authStage || 'fully_authorized';
+
+      // 1. Try server RPC check
+      let resolvedRole: Role | null = null;
+      let officerActive = true;
+      let officerDetails: { full_name?: string; department?: string; employee_id?: string } = {};
+
+      try {
+        const { data: roleData, error: roleError } = await supabase.rpc('get_current_user_role');
+        if (!roleError && roleData && Array.isArray(roleData) && roleData.length > 0) {
+          const row = roleData[0] as { role: Role; is_active: boolean; full_name: string; department: string; employee_id: string };
+          resolvedRole = row.role;
+          officerActive = row.is_active;
+          officerDetails = row;
+        }
+      } catch {
+        // Fallback to trusted registry
+      }
+
+      // 2. Authoritative role resolution fallback
+      if (!resolvedRole) {
+        if (email === 'admin@fusiongrid.gov.in') {
+          resolvedRole = 'admin';
+        } else {
+          const offCheck = officerService.checkOfficerActive(email);
+          if (offCheck.exists) {
+            resolvedRole = 'officer';
+            officerActive = offCheck.isActive;
+            if (offCheck.officer) {
+              officerDetails = {
+                full_name: offCheck.officer.full_name,
+                department: offCheck.officer.department,
+                employee_id: offCheck.officer.employee_id,
+              };
+            }
+          } else {
+            resolvedRole = 'citizen';
+          }
         }
       }
-      setAuthLoading(false);
+
+      if (!mounted) return;
+
+      // 3. Handle Admin
+      if (resolvedRole === 'admin') {
+        const adminUser: AuthUser = {
+          role: 'admin',
+          name: 'Nahid Shams',
+          id: 'MH-ADM-ROOT-001',
+          email: authUser.email,
+        };
+        setUser(adminUser);
+
+        const policy = await getAccountSecurityPolicy('admin@fusiongrid.gov.in', 'admin');
+        const stage: AuthStage = existing.session?.role === 'admin' && existing.session.authStage === 'fully_authorized'
+          ? 'fully_authorized'
+          : (policy.hasRegisteredPasskey ? 'biometric_verification_pending' : 'passkey_enrollment_required');
+
+        const newSession: SecuritySession = {
+          token: existing.session?.token || generateToken(),
+          role: 'admin',
+          issuedAt: existing.session?.issuedAt || new Date().toISOString(),
+          expiresAt: existing.session?.expiresAt || new Date(Date.now() + 8 * 3600 * 1000).toISOString(),
+          rateLimitRemaining: rateLimitTotal,
+          rateLimitTotal,
+          authStage: stage,
+          requiresBiometrics: true,
+          passkeyVerified: stage === 'fully_authorized',
+          biometricEnrolled: policy.hasRegisteredPasskey,
+        };
+        setSession(newSession);
+        persistSession(adminUser, newSession);
+        if (stage === 'fully_authorized') {
+          fetchAllApplications();
+        }
+        return;
+      }
+
+      // 4. Handle Officer
+      if (resolvedRole === 'officer') {
+        if (!officerActive) {
+          await supabase.auth.signOut().catch(() => {});
+          setUser(null);
+          setSession(null);
+          persistSession(null, null);
+          return;
+        }
+
+        const officerUser: AuthUser = {
+          role: 'officer',
+          name: officerDetails.full_name || 'Verification Officer',
+          id: officerDetails.employee_id || authUser.id,
+          department: officerDetails.department || 'Government Department',
+          email: authUser.email,
+        };
+        setUser(officerUser);
+
+        const policy = await getAccountSecurityPolicy(email, 'officer');
+        const stage: AuthStage = existing.session?.role === 'officer' && existing.session.authStage === 'fully_authorized'
+          ? 'fully_authorized'
+          : (policy.hasRegisteredPasskey ? 'biometric_verification_pending' : 'passkey_enrollment_required');
+
+        const newSession: SecuritySession = {
+          token: existing.session?.token || generateToken(),
+          role: 'officer',
+          issuedAt: existing.session?.issuedAt || new Date().toISOString(),
+          expiresAt: existing.session?.expiresAt || new Date(Date.now() + 8 * 3600 * 1000).toISOString(),
+          rateLimitRemaining: rateLimitTotal,
+          rateLimitTotal,
+          authStage: stage,
+          requiresBiometrics: true,
+          passkeyVerified: stage === 'fully_authorized',
+          biometricEnrolled: policy.hasRegisteredPasskey,
+        };
+        setSession(newSession);
+        persistSession(officerUser, newSession);
+        if (stage === 'fully_authorized') {
+          fetchAllApplications();
+        }
+        return;
+      }
+
+      // 5. Handle Citizen
+      const { data: profile } = await supabase
+        .from('citizens')
+        .select('*')
+        .eq('id', authUser.id)
+        .maybeSingle();
+
+      const citizenUser: AuthUser = {
+        role: 'citizen',
+        name: (profile as CitizenProfile)?.full_name || authUser.email?.split('@')[0] || 'Citizen',
+        id: authUser.id,
+        email: authUser.email,
+      };
+
+      if (profile) {
+        setCitizenProfile(profile as CitizenProfile);
+      }
+
+      const policy = await getAccountSecurityPolicy(email, 'citizen');
+      const stage: AuthStage = policy.requiresBiometrics
+        ? (existing.session?.role === 'citizen' && existing.session.authStage === 'fully_authorized'
+            ? 'fully_authorized'
+            : (policy.hasRegisteredPasskey ? 'biometric_verification_pending' : 'passkey_enrollment_required'))
+        : 'fully_authorized';
+
+      const newSession: SecuritySession = {
+        token: existing.session?.token || generateToken(),
+        role: 'citizen',
+        issuedAt: existing.session?.issuedAt || new Date().toISOString(),
+        expiresAt: existing.session?.expiresAt || new Date(Date.now() + 8 * 3600 * 1000).toISOString(),
+        rateLimitRemaining: rateLimitTotal,
+        rateLimitTotal,
+        authStage: stage,
+        requiresBiometrics: policy.requiresBiometrics,
+        passkeyVerified: !policy.requiresBiometrics || stage === 'fully_authorized',
+        biometricEnrolled: policy.hasRegisteredPasskey,
+      };
+
+      setUser(citizenUser);
+      setSession(newSession);
+      persistSession(citizenUser, newSession);
+      if (stage === 'fully_authorized') {
+        fetchApplications(authUser.id);
+      }
+    };
+
+    (async () => {
+      const persisted = loadPersistedSession();
+      if (persisted.user && persisted.session) {
+        setUser(persisted.user);
+        setSession(persisted.session);
+        if (persisted.session.authStage === 'fully_authorized') {
+          if (persisted.user.role === 'officer' || persisted.user.role === 'admin') {
+            fetchAllApplications();
+          } else if (persisted.user.role === 'citizen' && persisted.user.id) {
+            fetchApplications(persisted.user.id);
+          }
+        }
+      }
+
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (mounted && authUser) {
+          await syncAuthUser(authUser);
+        }
+      } catch {
+        // Continue with local persisted session
+      }
+
+      if (mounted) {
+        setAuthLoading(false);
+      }
     })();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       (async () => {
         if (event === 'SIGNED_OUT' || !session?.user) {
+          // If the active role was officer or admin without Supabase auth, don't clear local session
+          const persisted = loadPersistedSession();
+          if (persisted.user && (persisted.user.role === 'officer' || persisted.user.role === 'admin') && !session?.user) {
+            return;
+          }
           setUser(null);
           setCitizenProfile(null);
           setApplications([]);
           setConsents([]);
+          setSession(null);
+          persistSession(null, null);
           return;
         }
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          const { data: profile } = await supabase
-            .from('citizens')
-            .select('*')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          if (profile) {
-            setCitizenProfile(profile as CitizenProfile);
-            setUser({
-              role: 'citizen',
-              name: (profile as CitizenProfile).full_name || session.user.email || 'Citizen',
-              id: session.user.id,
-              email: session.user.email,
-            });
-            fetchApplications(session.user.id);
-          }
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+          await syncAuthUser(session.user);
         }
       })();
     });
@@ -778,7 +1130,7 @@ return { error: null };
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchApplications]);
+  }, [fetchAllApplications, fetchApplications]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -787,6 +1139,7 @@ return { error: null };
       value={{
         user,
         login,
+        completeBiometricAuthorization,
         logout,
         citizenProfile,
         authLoading,

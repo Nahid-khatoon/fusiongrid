@@ -1,280 +1,397 @@
+import { useState } from 'react';
 import {
-  Monitor, KeyRound, Lock, Server, GitBranch, Database,
-  Radio, Plug, Cpu, BarChart3, ArrowRight, Layers, ShieldCheck,
-  FileCheck, Zap, Clock, Network,
+  Monitor,
+  Lock,
+  Plug,
+  Cpu,
+  BarChart3,
+  ArrowRight,
+  Database,
+  Network,
+  Fingerprint,
+  Landmark,
+  GraduationCap,
+  HeartPulse,
+  Users,
+  Terminal,
+  ChevronRight,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface ArchitecturePageProps {
   navigate: (to: string) => void;
 }
 
-const layers = [
+const architectureTiers = [
   {
+    id: 'presentation',
+    tier: 'Tier 1: Presentation & User Experience',
+    title: 'Citizen Portal & Consoles',
+    desc: 'React 18 single-page application with tailored role-based views for Citizens, Officers, and Admins.',
+    components: ['Citizen Self-Service Portal', 'Officer Review Console', 'Admin Operations Control'],
+    color: 'border-[#D8C2AA] bg-[#F5EBDD] text-[#6F4028]',
     icon: Monitor,
-    label: 'Frontend',
-    sub: 'Citizen Portal · Officer Console · Admin Control Center',
-    desc: 'React-based single-page application with role-based interfaces for citizens, officers, and administrators. Responsive across desktop, tablet, and mobile.',
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
   },
   {
-    icon: KeyRound,
-    label: 'Authentication',
-    sub: 'Session Management · JWT-Style Tokens · RBAC',
-    desc: 'Role-based access control with simulated JWT sessions. Three roles: Citizen, Officer, Admin. Rate-limit simulation prevents API abuse.',
-    color: 'text-amber-600',
-    bg: 'bg-amber-50',
-  },
-  {
+    id: 'auth_consent',
+    tier: 'Tier 2: Governance & Identity',
+    title: 'Authentication & DPDP Consent Layer',
+    desc: 'Zero-trust authorization pipeline verifying session tokens and enforcing purpose-bound consent artifacts.',
+    components: ['JWT / Supabase Auth', 'Consent Ledger & Verification', 'Role-Based Access Control (RBAC)'],
+    color: 'border-[#D8C2AA] bg-[#FFF8ED] text-[#C58B55]',
     icon: Lock,
-    label: 'Consent Manager',
-    sub: 'Purpose-Bound · Revocable · Per-Department',
-    desc: 'Citizens grant or revoke consent for each department independently. Data is only exchanged within the granted scope and stated purpose.',
-    color: 'text-purple-600',
-    bg: 'bg-purple-50',
   },
   {
-    icon: Server,
-    label: 'API Gateway',
-    sub: 'Routing · Rate Limiting · Request Tracking',
-    desc: 'Unified entry point for all departmental APIs. Routes requests, enforces rate limits, tracks request IDs, and logs every call for monitoring.',
-    color: 'text-cyan-600',
-    bg: 'bg-cyan-50',
-  },
-  {
-    icon: GitBranch,
-    label: 'Data Transformation',
-    sub: 'Schema Mapping · Canonical Model',
-    desc: 'Transforms heterogeneous department schemas (full_name, studentName, name) into a unified canonical model (fullName, dateOfBirth, annualIncome).',
-    color: 'text-teal-600',
-    bg: 'bg-teal-50',
-  },
-  {
-    icon: Cpu,
-    label: 'Workflow Engine',
-    sub: 'State Machine · Retry Logic · SLA Tracking',
-    desc: 'Orchestrates multi-department verification workflows. Manages application state transitions, automatic retries on failure, and SLA compliance.',
-    color: 'text-indigo-600',
-    bg: 'bg-indigo-50',
-  },
-  {
-    icon: Database,
-    label: 'Master Data Management',
-    sub: 'Canonical Citizen Record · Source Reconciliation',
-    desc: 'Maintains a single canonical citizen record by reconciling data from Revenue, Education, and Social Welfare. Detects conflicts and quality issues.',
-    color: 'text-green-600',
-    bg: 'bg-green-50',
-  },
-  {
-    icon: Radio,
-    label: 'Event Bus',
-    sub: 'ApplicationSubmitted · IncomeVerified · ApiFailure',
-    desc: 'Shared event system that updates application state, creates notifications, generates audit logs, and feeds analytics — all from a single emit.',
-    color: 'text-rose-600',
-    bg: 'bg-rose-50',
-  },
-  {
-    icon: Plug,
-    label: 'Department Connectors',
-    sub: 'REST API · Legacy SOAP · CSV/File · Database Adapter',
-    desc: 'Adapters that connect heterogeneous government systems without replacing them. Each connector type handles protocol translation and data extraction.',
-    color: 'text-orange-600',
-    bg: 'bg-orange-50',
-  },
-  {
+    id: 'gateway',
+    tier: 'Tier 3: Ingress & Core Routing',
+    title: 'FusionGrid Central API Gateway',
+    desc: 'High-throughput secure protocol router enforcing TLS 1.3 encryption, rate limits, and audit tracking.',
+    components: ['Secure Reverse Proxy', 'Token Validation & Rate Limiter', 'mTLS Gateway Mesh'],
+    color: 'border-[#D8C2AA] bg-[#EAD8C2] text-[#6F4028]',
     icon: Network,
-    label: 'Legacy / Modern Systems',
-    sub: 'Revenue · Education · Health · Social Welfare',
-    desc: 'Existing government department systems remain untouched. FusionGrid connects to them through connectors — no replacement required.',
-    color: 'text-slate-600',
-    bg: 'bg-slate-100',
   },
   {
+    id: 'connectors',
+    tier: 'Tier 4: Interoperability Adapters (Simulated)',
+    title: 'Five Department Connectors',
+    desc: 'Non-invasive protocol adapters interfacing legacy state databases via simulated mock APIs.',
+    components: [
+      'Identity Connector (UIDAI / eKYC [Mock])',
+      'Revenue Connector (Mahabhulekh [Mock])',
+      'Education Connector (DigiLocker [Mock])',
+      'Health Connector (ABHA / FHIR [Mock])',
+      'Social Welfare Connector (DBT / PFMS [Mock])',
+    ],
+    color: 'border-[#D8C2AA] bg-[#F5EBDD] text-[#38241B]',
+    icon: Plug,
+  },
+  {
+    id: 'processing',
+    tier: 'Tier 5: Orchestration & Semantics',
+    title: 'Application Processing Engine',
+    desc: 'Transforms heterogeneous departmental responses into canonical data models and manages state transitions.',
+    components: ['Canonical Schema Transformer', 'Data Quality Engine', 'Workflow State Machine'],
+    color: 'border-[#D8C2AA] bg-[#FFF8ED] text-[#6F4028]',
+    icon: Cpu,
+  },
+  {
+    id: 'monitoring',
+    tier: 'Tier 6: Observability & Integrity',
+    title: 'Audit Logs & Real-Time Monitoring',
+    desc: 'Tamper-evident event stream capturing immutable audit events and real-time SLA telemetry.',
+    components: ['SHA-256 Cryptographic Ledger', 'SLA Telemetry Monitor', 'Event Stream Bus'],
+    color: 'border-[#D8C2AA] bg-[#EAD8C2] text-[#C58B55]',
     icon: BarChart3,
-    label: 'Monitoring + Audit',
-    sub: 'Real-Time Metrics · Immutable Audit Trail',
-    desc: 'Admin Control Center with live API monitoring, system health, data quality dashboards, and a complete audit log of every action and event.',
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-50',
+  },
+  {
+    id: 'persistence',
+    tier: 'Tier 7: Data & State Persistence',
+    title: 'Supabase Persistence Layer',
+    desc: 'PostgreSQL cloud database enforcing Row-Level Security (RLS) policies and real-time subscriptions.',
+    components: ['PostgreSQL Relational Storage', 'Row Level Security (RLS)', 'Encrypted Session Store'],
+    color: 'border-[#D8C2AA] bg-[#F5EBDD] text-[#6F4028]',
+    icon: Database,
   },
 ];
 
-const securityLayers = [
-  { icon: KeyRound, label: 'Role-Based Access', desc: 'Citizen, Officer, Admin — each role sees only permitted data and actions' },
-  { icon: ShieldCheck, label: 'Session / JWT Auth', desc: 'Simulated JWT tokens with 8-hour expiry and rate-limit tracking' },
-  { icon: Lock, label: 'Consent Checks', desc: 'Every data access verified against active citizen consent before proceeding' },
-  { icon: FileCheck, label: 'Purpose-Bound Access', desc: 'Data is only used for the stated purpose the citizen approved' },
-  { icon: Zap, label: 'Input Validation', desc: 'All citizen inputs validated before submission to the workflow engine' },
-  { icon: Clock, label: 'Rate-Limit Simulation', desc: '100 requests per session — API calls rejected when limit is exceeded' },
+const mockDepartmentConnectors = [
+  {
+    name: 'Identity Connector',
+    mockSystem: 'UIDAI / Civil Registry',
+    protocol: 'REST / OAuth2',
+    icon: Fingerprint,
+    tag: 'Simulated API',
+    desc: 'Simulates Aadhaar e-KYC token verification, biometric hash matching, and civil registry lookups.',
+  },
+  {
+    name: 'Revenue Connector',
+    mockSystem: 'Mahabhulekh Land Records',
+    protocol: 'SOAP Bridge & REST',
+    icon: Landmark,
+    tag: 'Simulated API',
+    desc: 'Simulates annual income certificate validation, property tax status, and land parcel coordinates.',
+  },
+  {
+    name: 'Education Connector',
+    mockSystem: 'DigiLocker / ABC API',
+    protocol: 'REST / JSON-LD',
+    icon: GraduationCap,
+    tag: 'Simulated API',
+    desc: 'Simulates university degree verification, ABC academic credit balances, and bonafide enrollment.',
+  },
+  {
+    name: 'Health Connector',
+    mockSystem: 'ABHA State Health Registry',
+    protocol: 'FHIR R4 / Webhooks',
+    icon: HeartPulse,
+    tag: 'Simulated API',
+    desc: 'Simulates consent-bound health record linkage, immunization status, and disability certificates.',
+  },
+  {
+    name: 'Social Welfare Connector',
+    mockSystem: 'PFMS / DBT Webhook',
+    protocol: 'Async Event Stream',
+    icon: Users,
+    tag: 'Simulated API',
+    desc: 'Simulates Direct Benefit Transfer eligibility, bank mandate verification, and scholarship queues.',
+  },
 ];
 
 export function ArchitecturePage({ navigate }: ArchitecturePageProps) {
+  const [activeTierId, setActiveTierId] = useState<string>('gateway');
+
+  const selectedTier =
+    architectureTiers.find((t) => t.id === activeTierId) || architectureTiers[2];
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="mx-auto max-w-3xl text-center">
-        <Badge variant="outline" className="mb-4 border-primary/20 bg-primary/5 text-primary">
-          System Architecture
-        </Badge>
-        <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
-          The FusionGrid interoperability stack
-        </h1>
-        <p className="mt-6 text-lg text-muted-foreground">
-          Eleven interconnected layers that bridge citizens to government departments — without replacing
-          any existing system. This is the architecture behind the SIH 2026 prototype.
-        </p>
-      </div>
+    <div className="overflow-hidden bg-[#F5EBDD] text-[#38241B]">
+      {/* Hero Header */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#FFF9F0] via-[#F5EBDD] to-[#E8D5BF]/30 border-b border-[#E8D5BF] py-20 text-[#38241B] sm:py-24">
+        <div className="pointer-events-none absolute inset-0 hero-grid-pattern opacity-40" />
+        <div className="pointer-events-none absolute -left-32 top-0 h-96 w-96 rounded-full bg-[#C58B55]/15 blur-3xl" />
+        <div className="pointer-events-none absolute right-0 top-12 h-96 w-96 rounded-full bg-[#6F4028]/10 blur-3xl" />
 
-      {/* Prototype disclaimer */}
-      <div className="mx-auto mt-6 max-w-2xl">
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardContent className="flex items-center gap-3 p-4">
-            <ShieldCheck className="h-5 w-5 shrink-0 text-amber-600" />
-            <p className="text-sm text-amber-800">
-              <strong>SIH 2026 Prototype — Fictional Demonstration.</strong> All APIs, data, and metrics
-              are simulated. No real government systems are connected.
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#D8C2AA] bg-[#FFF9F0] px-3.5 py-1.5 text-xs font-semibold text-[#6F4028] shadow-sm">
+              <Network className="h-3.5 w-3.5 text-[#C58B55]" />
+              Full-Stack Technical Architecture · SIH 2026
+            </div>
+            <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-[#38241B] leading-tight">
+              The FusionGrid{' '}
+              <span className="text-[#C58B55]">
+                Interoperability Stack
+              </span>
+            </h1>
+            <p className="mt-6 text-base text-[#755C49] sm:text-lg sm:leading-relaxed">
+              Seven interconnected architectural layers bridging citizens to legacy government
+              departments without replacing existing infrastructure. All departmental integrations
+              are simulated via mock connectors for SIH demonstration.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Prototype Notice */}
+      <div className="mx-auto -mt-6 max-w-4xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-[#E8D5BF] bg-[#FFF9F0] p-4.5 shadow-luxury">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-[#C58B55]" />
+            <p className="text-xs text-[#38241B] sm:text-sm">
+              <strong className="font-bold text-[#6F4028]">Simulated Integration Sandbox:</strong> All five department connectors operate
+              against realistic local mock APIs. No actual citizen databases or live government
+              servers are contacted.
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Architecture flow diagram */}
-      <div className="mt-16">
-        <h2 className="font-display text-2xl font-bold tracking-tight text-center">Layer-by-Layer Flow</h2>
-        <p className="mt-2 text-center text-muted-foreground">
-          From the citizen's screen to legacy government systems — every request passes through all eleven layers.
-        </p>
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        {/* Tier Diagram Visual Navigator */}
+        <div className="mb-14">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-2xl font-black tracking-tight text-[#38241B]">System Tier Topology</h2>
+              <p className="text-xs text-[#755C49] mt-1">
+                Click any layer to inspect internal components and protocol details
+              </p>
+            </div>
+            <span className="rounded-full bg-[#EAD8C2] border border-[#D8C2AA] px-3.5 py-1 font-mono text-xs font-bold text-[#6F4028]">
+              7 Architectural Tiers
+            </span>
+          </div>
 
-        <div className="mt-10 space-y-3">
-          {layers.map((layer, i) => {
-            const Icon = layer.icon;
-            return (
-              <div key={layer.label}>
-                <Card className="border-border/60 transition-all hover:shadow-md animate-fade-in-up" style={{ animationDelay: `${i * 50}ms` }}>
-                  <CardContent className="p-5">
-                    <div className="flex items-start gap-4">
-                      <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', layer.bg)}>
-                        <Icon className={cn('h-6 w-6', layer.color)} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-mono font-bold text-muted-foreground">L{String(i + 1).padStart(2, '0')}</span>
-                          <h3 className="font-display font-bold">{layer.label}</h3>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{layer.sub}</p>
-                        <p className="mt-2 text-sm text-muted-foreground">{layer.desc}</p>
-                      </div>
+          <div className="grid gap-6 lg:grid-cols-12">
+            {/* Left list of Tiers */}
+            <div className="space-y-3.5 lg:col-span-6">
+              {architectureTiers.map((t) => {
+                const Icon = t.icon;
+                const isSelected = activeTierId === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setActiveTierId(t.id)}
+                    className={cn(
+                      'group flex w-full items-center gap-3.5 rounded-2xl border p-4.5 text-left transition-all duration-300 shadow-luxury',
+                      isSelected
+                        ? 'border-[#6F4028] bg-[#FFF9F0] shadow-luxury-lg ring-2 ring-[#6F4028]/20 translate-x-1'
+                        : 'border-[#E8D5BF] bg-[#FFF9F0] hover:border-[#6F4028]'
+                    )}
+                  >
+                    <div className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border shadow-xs', t.color)}>
+                      <Icon className="h-5 w-5" />
                     </div>
-                  </CardContent>
-                </Card>
-                {i < layers.length - 1 && (
-                  <div className="flex justify-center py-1">
-                    <ArrowRight className="h-4 w-4 rotate-90 text-muted-foreground/30" />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+                    <div className="min-w-0 flex-1">
+                      <span className="font-mono text-[10px] uppercase font-bold text-[#755C49]">
+                        {t.tier.split(':')[0]}
+                      </span>
+                      <h4 className="font-display text-sm font-bold text-[#38241B] group-hover:text-[#6F4028] transition-colors">
+                        {t.title}
+                      </h4>
+                      <p className="truncate text-xs text-[#755C49] mt-0.5">{t.desc}</p>
+                    </div>
+                    <ChevronRight className={cn('h-4 w-4 shrink-0 transition-transform', isSelected ? 'rotate-90 text-[#6F4028]' : 'text-[#755C49]')} />
+                  </button>
+                );
+              })}
+            </div>
 
-      {/* Security simulation */}
-      <div className="mt-20">
-        <div className="mx-auto max-w-3xl text-center">
-          <Badge variant="secondary" className="mb-3">Security Simulation</Badge>
-          <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            Eight security layers simulated
-          </h2>
-          <p className="mt-3 text-muted-foreground">
-            FusionGrid enforces security at every layer — from authentication to audit logging. This prototype
-            demonstrates the structure without exposing any real secrets.
-          </p>
-        </div>
-
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {securityLayers.map((s) => {
-            const Icon = s.icon;
-            return (
-              <Card key={s.label} className="border-border/60">
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Icon className="h-4.5 w-4.5" />
+            {/* Right Tier Detail Inspector Panel */}
+            <div className="lg:col-span-6">
+              <div className="sticky top-24 rounded-3xl border border-[#4A2E22] bg-gradient-to-br from-[#2B1B14] via-[#38241B] to-[#21140F] p-8 text-[#FFF9F0] shadow-luxury-lg">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF9F0]/10 text-[#C58B55] border border-white/10 shadow-xs">
+                      {(() => {
+                        const Icon = selectedTier.icon;
+                        return <Icon className="h-5 w-5" />;
+                      })()}
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold">{s.label}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground">{s.desc}</p>
+                      <span className="font-mono text-[10px] font-bold text-[#C58B55] uppercase">
+                        {selectedTier.tier}
+                      </span>
+                      <h3 className="text-xl font-black text-[#FFF9F0]">{selectedTier.title}</h3>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Key design decisions */}
-      <div className="mt-20">
-        <h2 className="font-display text-2xl font-bold tracking-tight text-center">Key Design Decisions</h2>
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <Card className="border-primary/10">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Layers className="h-5 w-5" />
                 </div>
-                <CardTitle>Interoperability Without Replacement</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                FusionGrid never replaces existing government systems. It connects them through adapters —
-                REST APIs, SOAP bridges, CSV file exchanges, and database adapters — transforming data into
-                a common canonical model. Departments keep their systems; citizens get a unified experience.
-              </p>
-            </CardContent>
-          </Card>
 
-          <Card className="border-accent/20">
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent">
-                  <Radio className="h-5 w-5" />
+                <p className="mt-4 text-xs text-[#E8D5BF] leading-relaxed sm:text-sm">{selectedTier.desc}</p>
+
+                <div className="mt-6">
+                  <h5 className="font-display text-xs font-bold uppercase tracking-wider text-[#C58B55] mb-3">
+                    Key Modules & Protocols
+                  </h5>
+                  <div className="space-y-2.5">
+                    {selectedTier.components.map((comp) => (
+                      <div
+                        key={comp}
+                        className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-[#FFF9F0]/5 px-3.5 py-2.5 text-xs text-[#FFF9F0]"
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-[#C58B55] shrink-0" />
+                        <span>{comp}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <CardTitle>Event-Driven Architecture</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                A single event emission updates application state, creates notifications, generates audit
-                logs, and feeds analytics dashboards. This ensures every part of the system stays in sync
-                without tight coupling between modules.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
 
-      {/* CTA */}
-      <div className="mt-16 text-center">
-        <Card className="inline-block border-0 bg-gradient-to-r from-primary to-primary/80 px-8 py-6 text-primary-foreground shadow-xl">
-          <div className="flex items-center gap-4">
-            <div>
-              <h3 className="font-display text-lg font-bold">Explore the live admin dashboard</h3>
-              <p className="text-sm text-primary-foreground/80">Sign in as administrator to see the Control Center in action.</p>
+                <div className="mt-6 rounded-2xl border border-white/10 bg-[#FFF9F0]/5 p-4 text-xs text-[#E8D5BF]">
+                  <span className="font-bold block mb-1 text-[#FFF9F0]">Enterprise Assurance:</span>
+                  All communication between Tier 1 and Tier 7 conforms to strict stateless token validation and cryptographic audit hashing.
+                </div>
+              </div>
             </div>
-            <button
-              onClick={() => navigate('/login')}
-              className="flex items-center gap-2 rounded-lg bg-primary-foreground px-5 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary-foreground/90"
-            >
-              Go to Login
-              <ArrowRight className="h-4 w-4" />
-            </button>
           </div>
-        </Card>
+        </div>
+
+        {/* 5 Department Connectors Detailed Section (Mock APIs) */}
+        <div className="mt-20">
+          <div className="text-center mb-10">
+            <Badge variant="outline" className="mb-2 border-[#D8C2AA] bg-[#FFF9F0] text-[#6F4028] font-semibold">
+              Simulated Bridges
+            </Badge>
+            <h2 className="font-display text-3xl font-black tracking-tight text-[#38241B]">
+              Five Department Connectors
+            </h2>
+            <p className="mt-2 text-sm text-[#755C49] max-w-xl mx-auto">
+              How FusionGrid securely communicates with external departmental servers without requiring
+              them to modify their internal database schemas.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {mockDepartmentConnectors.map((c) => {
+              const Icon = c.icon;
+              return (
+                <Card
+                  key={c.name}
+                  className="rounded-2xl border-[#E8D5BF] bg-[#FFF9F0] hover:border-[#6F4028] hover:shadow-luxury-lg hover:-translate-y-1 transition-all duration-300 shadow-luxury"
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F5EBDD] text-[#6F4028] shadow-xs">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <span className="rounded-full border border-[#D8C2AA] bg-[#EAD8C2] px-2.5 py-0.5 font-mono text-[10px] font-bold text-[#6F4028]">
+                        {c.tag}
+                      </span>
+                    </div>
+
+                    <h3 className="font-display text-base font-bold text-[#38241B]">{c.name}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs font-semibold text-[#6F4028]">{c.mockSystem}</span>
+                      <span className="text-[#D8C2AA]">•</span>
+                      <span className="font-mono text-[10px] text-[#755C49]">{c.protocol}</span>
+                    </div>
+
+                    <p className="mt-3 text-xs text-[#755C49] leading-relaxed">{c.desc}</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+
+            {/* Supabase Persistence Card */}
+            <Card className="rounded-2xl border-[#E8D5BF] bg-[#FFF9F0] hover:border-[#6F4028] hover:shadow-luxury-lg hover:-translate-y-1 transition-all duration-300 shadow-luxury md:col-span-2 lg:col-span-1">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F5EBDD] text-[#6F4028] shadow-xs">
+                    <Database className="h-5 w-5" />
+                  </div>
+                  <span className="rounded-full border border-[#D8C2AA] bg-[#EAD8C2] px-2.5 py-0.5 font-mono text-[10px] font-bold text-[#6F4028]">
+                    Live Supabase DB
+                  </span>
+                </div>
+
+                <h3 className="font-display text-base font-bold text-[#38241B]">PostgreSQL & RLS</h3>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-semibold text-[#6F4028]">Database Core</span>
+                  <span className="text-[#D8C2AA]">•</span>
+                  <span className="font-mono text-[10px] text-[#755C49]">PostgreSQL 15</span>
+                </div>
+
+                <p className="mt-3 text-xs text-[#755C49] leading-relaxed">
+                  Persistent application storage, user profile records, and audit events enforced
+                  with Row Level Security and automatic session restoration.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Explore Live Admin Dashboard CTA */}
+        <div className="mt-16 text-center">
+          <div className="rounded-3xl border border-[#4A2E22] bg-gradient-to-br from-[#2B1B14] via-[#38241B] to-[#21140F] p-10 text-[#FFF9F0] shadow-luxury-lg sm:p-14">
+            <h3 className="font-display text-2xl font-black text-[#FFF9F0] sm:text-3xl">Inspect Live Telemetry & API Monitor</h3>
+            <p className="mt-3 text-xs text-[#E8D5BF] max-w-xl mx-auto sm:text-sm leading-relaxed">
+              Sign into the Administrator Control Center to view real-time latency graphs,
+              simulated failure recovery tests, and tamper-evident audit logs.
+            </p>
+            <div className="mt-8 flex flex-col justify-center gap-3.5 sm:flex-row">
+              <Button
+                size="lg"
+                onClick={() => navigate('/login')}
+                className="gap-2 bg-[#C58B55] hover:bg-[#b07844] text-[#2B1B14] border-0 shadow-luxury font-bold"
+              >
+                <Terminal className="h-4 w-4" />
+                Sign in as Admin
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => navigate('/how-it-works')}
+                className="gap-2 border-white/20 bg-white/10 text-[#FFF9F0] hover:bg-white/20 font-semibold"
+              >
+                View Workflow Sequence
+                <ArrowRight className="h-4 w-4 text-[#C58B55]" />
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

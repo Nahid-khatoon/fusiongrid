@@ -5,20 +5,20 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
         default:
-          'bg-primary text-primary-foreground shadow hover:bg-primary/90',
+          'bg-[#6F4028] text-[#FFF8ED] shadow-sm hover:bg-[#805236] font-semibold',
         destructive:
           'bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90',
         outline:
-          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
+          'border border-[#D8C2AA] bg-[#FFF8ED] text-[#38241B] shadow-sm hover:bg-[#EAD8C2] hover:text-[#6F4028] font-semibold',
         secondary:
-          'bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80',
-        ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+          'bg-[#EAD8C2] text-[#38241B] shadow-sm hover:bg-[#D8C2AA] font-semibold',
+        ghost: 'text-[#38241B] hover:bg-[#EAD8C2] hover:text-[#6F4028] font-semibold',
+        link: 'text-[#6F4028] underline-offset-4 hover:underline font-semibold',
       },
       size: {
         default: 'h-9 px-4 py-2',

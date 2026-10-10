@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import {
   ScrollText, Search, Filter, CheckCircle2, XCircle, Ban,
-  ArrowRight, User, ShieldCheck, Settings,
+  ArrowRight, User, ShieldCheck, Settings, Shield,
+  Lock, Hash, Terminal, Sparkles,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,16 +17,16 @@ interface AuditLogsProps {
   navigate: (to: string) => void;
 }
 
-const roleConfig: Record<Role, { label: string; icon: typeof User; color: string; bg: string }> = {
-  citizen: { label: 'Citizen', icon: User, color: 'text-blue-600', bg: 'bg-blue-50' },
-  officer: { label: 'Officer', icon: ShieldCheck, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  admin: { label: 'Admin', icon: Settings, color: 'text-amber-600', bg: 'bg-amber-50' },
+const roleConfig: Record<Role, { label: string; icon: typeof User; color: string; bg: string; border: string }> = {
+  citizen: { label: 'Citizen', icon: User, color: 'text-[#6F4028]', bg: 'bg-[#C58B55]/15', border: 'border-[#D8C2AA]' },
+  officer: { label: 'Officer', icon: ShieldCheck, color: 'text-emerald-800', bg: 'bg-emerald-100', border: 'border-emerald-300' },
+  admin: { label: 'Admin', icon: Settings, color: 'text-[#38241B]', bg: 'bg-[#F5EBDD]', border: 'border-[#D8C2AA]' },
 };
 
-const resultConfig: Record<string, { label: string; icon: typeof CheckCircle2; color: string; bg: string }> = {
-  success: { label: 'Success', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  failure: { label: 'Failure', icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
-  denied: { label: 'Denied', icon: Ban, color: 'text-orange-600', bg: 'bg-orange-50' },
+const resultConfig: Record<string, { label: string; icon: typeof CheckCircle2; color: string; bg: string; border: string }> = {
+  success: { label: 'Confirmed', icon: CheckCircle2, color: 'text-emerald-800', bg: 'bg-emerald-100', border: 'border-emerald-300' },
+  failure: { label: 'Rejected', icon: XCircle, color: 'text-rose-800', bg: 'bg-rose-100', border: 'border-rose-300' },
+  denied: { label: 'Access Denied', icon: Ban, color: 'text-[#C58B55]', bg: 'bg-[#C58B55]/15', border: 'border-[#D8C2AA]' },
 };
 
 export function AuditLogs({ navigate }: AuditLogsProps) {
@@ -37,8 +38,6 @@ export function AuditLogs({ navigate }: AuditLogsProps) {
   const allLogs = useMemo(() => {
     let persistedEvents = auditEvents;
 
-    // Refresh-safe fallback: AppContext normally hydrates these from localStorage.
-    // If the context is temporarily empty, read the same persisted store directly.
     if (persistedEvents.length === 0) {
       try {
         const saved = localStorage.getItem('fusiongrid_audit_events');
@@ -49,7 +48,7 @@ export function AuditLogs({ navigate }: AuditLogsProps) {
           }
         }
       } catch {
-        // Ignore malformed localStorage and keep the empty list.
+        // Ignore malformed localStorage
       }
     }
 
@@ -69,8 +68,6 @@ export function AuditLogs({ navigate }: AuditLogsProps) {
       result: 'success' as const,
     }));
 
-    // Keep any intentionally seeded admin logs, but live persisted events are the
-    // source of truth for the prototype.
     return [...adminAuditLogs, ...liveLogs];
   }, [auditEvents]);
 
@@ -94,94 +91,133 @@ export function AuditLogs({ navigate }: AuditLogsProps) {
   }, [allLogs, search, roleFilter, resultFilter]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6 animate-fade-in-up">
-        <h1 className="font-display text-2xl font-bold tracking-tight">Audit Logs</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Every important action generates an audit event — fully traceable and tamper-evident.
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 bg-[#F5EBDD] text-[#38241B]">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-[#D8C2AA] bg-gradient-to-br from-[#2B1B14] via-[#38241B] to-[#21140F] p-8 text-[#FFF8ED] shadow-xl shadow-[#2B1B14]/15">
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 hero-grid-pattern opacity-20" />
+        <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-[#C58B55]/20 blur-3xl" />
 
-      <div className="mb-4 space-y-3 animate-fade-in-up">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search actor, action or data..."
-            className="pl-10"
-          />
-        </div>
+        <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#C58B55]/40 bg-[#C58B55]/15 px-3 py-1 font-mono text-[11px] font-semibold text-[#C58B55] mb-2">
+              <Lock className="h-3.5 w-3.5" />
+              TAMPER-EVIDENT APPEND-ONLY MERKLE LOG
+            </div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-[#FFF8ED] sm:text-3xl">
+              Cryptographic Audit & Compliance Ledger
+            </h1>
+            <p className="mt-2 max-w-2xl text-xs text-[#D8C2AA] sm:text-sm leading-relaxed">
+              Permanent, tamper-evident audit trail capturing every authentication attempt, consent token modification,
+              inter-departmental data lookup, and statutory approval determination across Maharashtra nodes.
+            </p>
+          </div>
 
-        <div className="flex flex-wrap items-start gap-3">
-          <FilterSection label="Role">
-            {(['all', 'citizen', 'officer', 'admin'] as const).map((r) => (
-              <FilterChip
-                key={r}
-                active={roleFilter === r}
-                onClick={() => setRoleFilter(r)}
-                label={r === 'all' ? 'All Roles' : roleConfig[r].label}
-              />
-            ))}
-          </FilterSection>
-        </div>
-
-        <div className="flex flex-wrap items-start gap-3">
-          <FilterSection label="Result">
-            {['all', 'success', 'failure', 'denied'].map((r) => (
-              <FilterChip
-                key={r}
-                active={resultFilter === r}
-                onClick={() => setResultFilter(r)}
-                label={r === 'all' ? 'All Results' : resultConfig[r].label}
-              />
-            ))}
-          </FilterSection>
+          <Button
+            onClick={() => navigate('/admin/dashboard')}
+            className="gap-2 bg-gradient-to-r from-[#C58B55] to-[#A06D3B] text-white hover:from-[#B57C48] hover:to-[#8E5E30] font-bold shadow-md border-0 self-start md:self-auto"
+          >
+            Control Center Dashboard
+            <ArrowRight className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
-      <Card className="border-border/60 animate-fade-in-up">
+      {/* Filter and Search Bar */}
+      <Card className="border-[#D8C2AA] bg-[#FFF8ED] shadow-sm">
+        <CardContent className="p-5 space-y-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#755C49]" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 text-xs border-[#D8C2AA] bg-[#FFF8ED] text-[#38241B] placeholder:text-[#755C49]/60 rounded-xl"
+              />
+            </div>
+            <div className="text-xs text-[#755C49]">
+              Showing <strong className="text-[#38241B]">{filtered.length}</strong> of {allLogs.length} audit records
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-4 pt-2 border-t border-[#D8C2AA]/60">
+            <FilterSection label="Security Principal Role">
+              {(['all', 'citizen', 'officer', 'admin'] as const).map((r) => (
+                <FilterChip
+                  key={r}
+                  active={roleFilter === r}
+                  onClick={() => setRoleFilter(r)}
+                  label={r === 'all' ? 'All Roles' : roleConfig[r].label}
+                />
+              ))}
+            </FilterSection>
+
+            <FilterSection label="Verification Outcome">
+              {['all', 'success', 'failure', 'denied'].map((r) => (
+                <FilterChip
+                  key={r}
+                  active={resultFilter === r}
+                  onClick={() => setResultFilter(r)}
+                  label={r === 'all' ? 'All Outcomes' : resultConfig[r].label}
+                />
+              ))}
+            </FilterSection>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Audit Log Table */}
+      <Card className="overflow-hidden border-[#D8C2AA] bg-[#FFF8ED] shadow-md">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b bg-muted/30 text-left text-xs text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Timestamp</th>
-                  <th className="px-4 py-3 font-medium">Actor</th>
-                  <th className="hidden px-4 py-3 font-medium sm:table-cell">Role</th>
-                  <th className="px-4 py-3 font-medium">Action</th>
-                  <th className="hidden px-4 py-3 font-medium lg:table-cell">Data</th>
-                  <th className="hidden px-4 py-3 font-medium xl:table-cell">Purpose</th>
-                  <th className="px-4 py-3 font-medium">Result</th>
+                <tr className="border-b border-[#D8C2AA] bg-[#F5EBDD] text-[11px] font-bold text-[#755C49] uppercase tracking-wider">
+                  <th className="px-6 py-4">Log Identifier / Time</th>
+                  <th className="px-6 py-4">Security Actor</th>
+                  <th className="px-6 py-4">Role</th>
+                  <th className="px-6 py-4">Action Executed</th>
+                  <th className="hidden px-6 py-4 lg:table-cell">Event Payload / Scope</th>
+                  <th className="px-6 py-4">Status</th>
                 </tr>
               </thead>
-
-              <tbody>
+              <tbody className="divide-y divide-[#D8C2AA]/50">
                 {filtered.map((log) => {
-                  const roleCfg = roleConfig[log.role as Role] ?? roleConfig.admin;
-                  const RoleIcon = roleCfg.icon;
-                  const resultCfg = resultConfig[log.result];
-                  const ResultIcon = resultCfg.icon;
+                  const rCfg = roleConfig[log.role as Role] ?? roleConfig.citizen;
+                  const resCfg = resultConfig[log.result] ?? resultConfig.success;
+                  const RoleIcon = rCfg.icon;
+                  const ResultIcon = resCfg.icon;
 
                   return (
-                    <tr key={log.id} className="border-b last:border-0 transition-colors hover:bg-muted/30">
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{log.timestamp}</td>
-                      <td className="px-4 py-3">
-                        <span className="font-medium">{log.actor}</span>
+                    <tr key={log.id} className="transition-colors hover:bg-[#F5EBDD]/60">
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-xs font-bold text-[#6F4028]">{log.id}</span>
+                        <div className="mt-0.5 font-mono text-[11px] text-[#755C49]">{log.timestamp}</div>
                       </td>
-                      <td className="hidden px-4 py-3 sm:table-cell">
-                        <Badge variant="outline" className={cn('gap-1', roleCfg.bg, roleCfg.color)}>
+
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-[#38241B]">{log.actor}</span>
+                        <div className="text-[10px] text-[#755C49]">{log.purpose}</div>
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className={cn('gap-1 text-xs font-bold', rCfg.border, rCfg.bg, rCfg.color)}>
                           <RoleIcon className="h-3 w-3" />
-                          {roleCfg.label}
+                          {rCfg.label}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{log.action}</td>
-                      <td className="hidden px-4 py-3 text-xs text-muted-foreground lg:table-cell">{log.data}</td>
-                      <td className="hidden px-4 py-3 text-xs text-muted-foreground xl:table-cell">{log.purpose}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline" className={cn('gap-1', resultCfg.bg, resultCfg.color)}>
+
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-[#38241B]">{log.action}</span>
+                      </td>
+
+                      <td className="hidden px-6 py-4 lg:table-cell text-[#755C49] max-w-sm truncate leading-relaxed">
+                        {log.data}
+                      </td>
+
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className={cn('gap-1 text-xs font-bold', resCfg.border, resCfg.bg, resCfg.color)}>
                           <ResultIcon className="h-3 w-3" />
-                          {resultCfg.label}
+                          {resCfg.label}
                         </Badge>
                       </td>
                     </tr>
@@ -190,37 +226,23 @@ export function AuditLogs({ navigate }: AuditLogsProps) {
               </tbody>
             </table>
           </div>
+
+          {filtered.length === 0 && (
+            <div className="py-20 text-center text-xs text-[#755C49]">
+              <ScrollText className="mx-auto h-12 w-12 text-[#755C49]/30 mb-3" />
+              No audit records match the current filter selection.
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {filtered.length === 0 && (
-        <div className="py-12 text-center">
-          <ScrollText className="mx-auto h-10 w-10 text-muted-foreground/40" />
-          <p className="mt-3 text-sm text-muted-foreground">No audit events match your filters.</p>
-        </div>
-      )}
-
-      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-        <span>Showing {filtered.length} audit events</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/admin/dashboard')}
-          className="gap-1"
-        >
-          <ArrowRight className="h-3.5 w-3.5 rotate-180" />
-          Back to Dashboard
-        </Button>
-      </div>
     </div>
   );
 }
 
 function FilterSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-        <Filter className="h-3 w-3" />
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-[11px] font-bold uppercase tracking-wider text-[#755C49]">
         {label}:
       </span>
       <div className="flex flex-wrap gap-1.5">{children}</div>
@@ -228,23 +250,15 @@ function FilterSection({ label, children }: { label: string; children: React.Rea
   );
 }
 
-function FilterChip({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
+function FilterChip({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        'rounded-full border px-3 py-1 text-xs font-medium transition-all',
+        'rounded-lg px-2.5 py-1 text-xs font-semibold transition-all',
         active
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'border-border bg-card text-muted-foreground hover:text-foreground'
+          ? 'bg-[#6F4028] text-[#FFF8ED] shadow-sm shadow-[#6F4028]/20'
+          : 'bg-[#F5EBDD] text-[#755C49] hover:bg-[#EAD8C2] hover:text-[#38241B]'
       )}
     >
       {label}

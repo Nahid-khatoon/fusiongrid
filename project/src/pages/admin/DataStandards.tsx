@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   FileBarChart, ArrowRight, Zap, CheckCircle2, Database,
-  GitBranch, AlertTriangle, Users, Loader2,
+  GitBranch, AlertTriangle, Users, Loader2, Shield,
+  Layers, Code, Check, ExternalLink, Sparkles,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,27 +29,27 @@ interface CitizenRow {
 
 const transformationExamples = [
   {
-    source: 'Revenue Department',
+    source: 'Revenue & Land Records (Mahabhulekh)',
     rawFields: [
-      { raw: 'full_name', canonical: 'fullName' },
-      { raw: 'dob', canonical: 'dateOfBirth' },
-      { raw: 'income_amount', canonical: 'annualIncome' },
+      { raw: 'applicant_full_name', canonical: 'fullName' },
+      { raw: 'birth_date_epoch', canonical: 'dateOfBirth' },
+      { raw: 'certified_income_inr', canonical: 'annualIncome' },
     ],
   },
   {
-    source: 'Education Department',
+    source: 'Higher Education (ABC & AISHE)',
     rawFields: [
-      { raw: 'studentName', canonical: 'fullName' },
-      { raw: 'dateOfBirth', canonical: 'dateOfBirth' },
-      { raw: 'annualIncome', canonical: 'annualIncome' },
+      { raw: 'student_legal_name', canonical: 'fullName' },
+      { raw: 'dob_formatted', canonical: 'dateOfBirth' },
+      { raw: 'institute_aishe_code', canonical: 'collegeId' },
     ],
   },
   {
-    source: 'Social Welfare',
+    source: 'Social Welfare & Direct Benefit Transfer',
     rawFields: [
-      { raw: 'name', canonical: 'fullName' },
-      { raw: 'birth_date', canonical: 'dateOfBirth' },
-      { raw: 'income', canonical: 'annualIncome' },
+      { raw: 'beneficiary_name', canonical: 'fullName' },
+      { raw: 'aadhaar_linked_dob', canonical: 'dateOfBirth' },
+      { raw: 'family_annual_bracket', canonical: 'annualIncome' },
     ],
   },
 ];
@@ -80,196 +81,131 @@ export function DataStandards({ navigate }: DataStandardsProps) {
   const conflictIssues = dataQualityIssues.filter((i) => i.issueType === 'conflict');
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6 animate-fade-in-up">
-        <h1 className="font-display text-2xl font-bold tracking-tight">Data Standards</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Field-level transformation from heterogeneous source schemas to the FusionGrid canonical model.
-        </p>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 bg-[#F5EBDD] text-[#38241B]">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-[#D8C2AA] bg-gradient-to-br from-[#2B1B14] via-[#38241B] to-[#21140F] p-8 text-[#FFF8ED] shadow-xl shadow-[#2B1B14]/15">
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 hero-grid-pattern opacity-20" />
+        <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-[#C58B55]/20 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#C58B55]/40 bg-[#C58B55]/15 px-3 py-1 font-mono text-[11px] font-semibold text-[#C58B55] mb-2">
+              <Zap className="h-3.5 w-3.5" />
+              CANONICAL ONTOLOGY REPOSITORY
+            </div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-[#FFF8ED] sm:text-3xl">
+              Data Standards & Canonical Schemas
+            </h1>
+            <p className="mt-2 max-w-2xl text-xs text-[#D8C2AA] sm:text-sm leading-relaxed">
+              Open Government Data (OGD) standard schema dictionary normalizing divergent department models
+              into unified golden records for state-level social security and scholarship delivery.
+            </p>
+          </div>
+
+          <Button
+            onClick={() => navigate('/admin/dashboard')}
+            className="gap-2 bg-gradient-to-r from-[#C58B55] to-[#A06D3B] text-white hover:from-[#B57C48] hover:to-[#8E5E30] font-bold shadow-md border-0 self-start md:self-auto"
+          >
+            Control Center Dashboard
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      {/* Transformation demo */}
-      <Card className="mb-6 border-border/60 animate-fade-in-up">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Zap className="h-4 w-4 text-primary" />
-            Schema Transformation
+      {/* Field-level Transformation Pipeline */}
+      <Card className="border-[#D8C2AA] bg-[#FFF8ED] shadow-md overflow-hidden">
+        <CardHeader className="border-b border-[#D8C2AA] bg-[#F5EBDD] px-6 py-4">
+          <CardTitle className="text-base font-bold flex items-center gap-2 text-[#38241B]">
+            <Zap className="h-4.5 w-4.5 text-[#6F4028]" />
+            Field-Level Semantic Normalization Pipeline
           </CardTitle>
-          <CardDescription>How different department schemas map to unified canonical fields</CardDescription>
+          <CardDescription className="text-xs text-[#755C49]">
+            Automatic bidirectional attribute mapping across legacy SQL databases and web services
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="p-6">
+          <div className="grid gap-4 md:grid-cols-3">
             {transformationExamples.map((ex) => (
-              <div key={ex.source} className="rounded-lg border bg-muted/20 p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Database className="h-4 w-4 text-primary" />
-                  <h3 className="font-display font-semibold text-sm">{ex.source}</h3>
+              <div key={ex.source} className="rounded-2xl border border-[#D8C2AA] bg-[#FFF8ED] p-5 space-y-4 shadow-sm">
+                <div className="flex items-center gap-2.5 border-b border-[#D8C2AA]/60 pb-3">
+                  <Database className="h-4.5 w-4.5 text-[#6F4028]" />
+                  <h3 className="font-bold text-xs text-[#38241B]">{ex.source}</h3>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="space-y-2.5">
                   {ex.rawFields.map((f) => (
-                    <div key={f.raw} className="rounded-lg border bg-card p-3">
-                      <div className="flex items-center gap-1.5">
-                        <code className="font-mono text-xs text-muted-foreground">{f.raw}</code>
-                        <ArrowRight className="h-3 w-3 text-primary" />
-                        <code className="font-mono text-xs font-semibold text-primary">{f.canonical}</code>
-                      </div>
+                    <div key={f.raw} className="flex items-center justify-between rounded-xl border border-[#D8C2AA] bg-[#F5EBDD] p-2.5 text-xs">
+                      <code className="font-mono text-[11px] text-[#755C49] font-medium">{f.raw}</code>
+                      <ArrowRight className="h-3 w-3 text-[#6F4028] shrink-0 mx-1.5" />
+                      <code className="font-mono text-[11px] font-bold text-[#6F4028]">{f.canonical}</code>
                     </div>
                   ))}
                 </div>
               </div>
             ))}
-
-            {/* Canonical result */}
-            <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-4">
-              <div className="mb-3 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <h3 className="font-display font-semibold text-sm">FusionGrid Canonical Record</h3>
-                <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-emerald-700">Unified</Badge>
-              </div>
-              {loading ? (
-                <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading registered citizens…
-                </div>
-              ) : citizens.length === 0 ? (
-                <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  No registered citizens yet. Citizen records will appear here after signup.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {citizens.map((c) => (
-                    <div key={c.id} className="rounded-lg border bg-card p-3">
-                      <div className="mb-2 flex items-center justify-between">
-                        <p className="text-sm font-semibold">{c.full_name || 'Unnamed Citizen'}</p>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {c.id.substring(0, 8)}
-                        </Badge>
-                      </div>
-                      <div className="grid gap-2 sm:grid-cols-3">
-                        <div>
-                          <code className="font-mono text-xs text-muted-foreground">fullName</code>
-                          <p className="mt-0.5 text-sm font-medium">{c.full_name || '—'}</p>
-                        </div>
-                        <div>
-                          <code className="font-mono text-xs text-muted-foreground">dateOfBirth</code>
-                          <p className="mt-0.5 text-sm font-medium">{c.dob || '—'}</p>
-                        </div>
-                        <div>
-                          <code className="font-mono text-xs text-muted-foreground">district</code>
-                          <p className="mt-0.5 text-sm font-medium">{c.district || '—'}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Master Data — Canonical + Source Records */}
-      <Card className="mb-6 border-border/60 animate-fade-in-up">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FileBarChart className="h-4 w-4 text-primary" />
-            Master Data Record
-          </CardTitle>
-          <CardDescription>Canonical citizen record with source records from Revenue, Education, and Social Welfare</CardDescription>
+      {/* Master Data Records */}
+      <Card className="border-[#D8C2AA] bg-[#FFF8ED] shadow-md overflow-hidden">
+        <CardHeader className="border-b border-[#D8C2AA] bg-[#F5EBDD] px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-[#38241B]">
+                <FileBarChart className="h-4.5 w-4.5 text-[#6F4028]" />
+                Live Master Data Entities (Supabase Store)
+              </CardTitle>
+              <CardDescription className="text-xs text-[#755C49]">
+                Active unified citizen records with source provenance
+              </CardDescription>
+            </div>
+            <Badge variant="outline" className="border-emerald-300 bg-emerald-100 text-emerald-800 text-xs font-bold">
+              ✓ Canonical Synced
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {loading ? (
-            <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading registered citizens…
+            <div className="flex items-center justify-center py-16 text-xs text-[#755C49]">
+              <Loader2 className="h-5 w-5 animate-spin mr-2 text-[#6F4028]" />
+              Querying sovereign Supabase schema registry…
             </div>
           ) : error ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              Failed to load citizen data: {error}
+            <div className="rounded-2xl border border-rose-300 bg-rose-50 p-4 text-xs text-rose-800">
+              Database connection error: {error}
             </div>
           ) : citizens.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-12 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <Users className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">No registered citizens found</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Citizen records will appear here once users sign up through the portal.
-                </p>
-              </div>
+            <div className="py-16 text-center text-xs text-[#755C49]">
+              <Users className="mx-auto h-10 w-10 text-[#755C49]/30 mb-2" />
+              No citizen records found. Registered users will appear here automatically.
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {citizens.map((c) => (
-                <div key={c.id}>
-                  {/* Canonical record */}
-                  <div className="mb-4 rounded-lg border-2 border-primary/30 bg-primary/5 p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <h3 className="font-display font-semibold text-sm">Canonical Citizen Record</h3>
-                      <Badge variant="outline" className="font-mono">{c.id.substring(0, 8)}</Badge>
+                <div key={c.id} className="rounded-2xl border border-[#D8C2AA] bg-[#FFF8ED] p-5 space-y-3.5 shadow-sm hover:border-[#6F4028] transition-all">
+                  <div className="flex items-center justify-between border-b border-[#D8C2AA]/50 pb-3">
+                    <div>
+                      <h4 className="font-bold text-sm text-[#38241B]">{c.full_name || 'Citizen Applicant'}</h4>
+                      <p className="font-mono text-[11px] text-[#6F4028] font-bold">UID: {c.id}</p>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Full Name</p>
-                        <p className="text-sm font-semibold">{c.full_name || '—'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Date of Birth</p>
-                        <p className="text-sm font-semibold">{c.dob || '—'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Mobile</p>
-                        <p className="text-sm font-semibold">{c.mobile || '—'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">District</p>
-                        <p className="text-sm font-semibold">{c.district || '—'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Verified</p>
-                        <p className="text-sm font-semibold">{c.verified ? 'Yes' : 'No'}</p>
-                      </div>
-                      <div className="sm:col-span-2 lg:col-span-3">
-                        <p className="text-xs text-muted-foreground">Address</p>
-                        <p className="text-sm font-semibold">{c.address || '—'}</p>
-                      </div>
-                    </div>
+                    <Badge variant="outline" className="border-emerald-300 bg-emerald-100 text-emerald-800 text-xs font-bold">
+                      {c.verified ? 'Verified Entity' : 'Pending Verification'}
+                    </Badge>
                   </div>
 
-                  {/* Source records table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b bg-muted/30 text-left text-xs text-muted-foreground">
-                          <th className="px-4 py-3 font-medium">Source</th>
-                          <th className="px-4 py-3 font-medium">Source Field</th>
-                          <th className="px-4 py-3 font-medium">Source Value</th>
-                          <th className="hidden px-4 py-3 font-medium sm:table-cell">Maps To</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="border-b last:border-0 transition-colors hover:bg-muted/30">
-                          <td className="px-4 py-3"><Badge variant="outline" className="text-xs">Citizen Profile</Badge></td>
-                          <td className="px-4 py-3"><code className="font-mono text-xs text-muted-foreground">full_name</code></td>
-                          <td className="px-4 py-3 text-muted-foreground">{c.full_name || '—'}</td>
-                          <td className="hidden px-4 py-3 sm:table-cell"><code className="font-mono text-xs font-semibold text-primary">fullName</code></td>
-                        </tr>
-                        <tr className="border-b last:border-0 transition-colors hover:bg-muted/30">
-                          <td className="px-4 py-3"><Badge variant="outline" className="text-xs">Citizen Profile</Badge></td>
-                          <td className="px-4 py-3"><code className="font-mono text-xs text-muted-foreground">dob</code></td>
-                          <td className="px-4 py-3 text-muted-foreground">{c.dob || '—'}</td>
-                          <td className="hidden px-4 py-3 sm:table-cell"><code className="font-mono text-xs font-semibold text-primary">dateOfBirth</code></td>
-                        </tr>
-                        <tr className="border-b last:border-0 transition-colors hover:bg-muted/30">
-                          <td className="px-4 py-3"><Badge variant="outline" className="text-xs">Citizen Profile</Badge></td>
-                          <td className="px-4 py-3"><code className="font-mono text-xs text-muted-foreground">address</code></td>
-                          <td className="px-4 py-3 text-muted-foreground">{c.address || '—'}</td>
-                          <td className="hidden px-4 py-3 sm:table-cell"><code className="font-mono text-xs font-semibold text-primary">address</code></td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div className="grid gap-3 sm:grid-cols-3 text-xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[#755C49] block">Date of Birth</span>
+                      <p className="font-semibold text-[#38241B] mt-0.5">{c.dob || '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[#755C49] block">Mobile Contact</span>
+                      <p className="font-semibold text-[#38241B] mt-0.5">{c.mobile ? `+91 ${c.mobile}` : '—'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[#755C49] block">District Jurisdiction</span>
+                      <p className="font-semibold text-[#38241B] mt-0.5">{c.district || '—'}</p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -278,74 +214,40 @@ export function DataStandards({ navigate }: DataStandardsProps) {
         </CardContent>
       </Card>
 
-      {/* Data Quality — Conflicts & Matching */}
-      <Card className="mb-6 border-border/60 animate-fade-in-up">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <GitBranch className="h-4 w-4 text-primary" />
-            Data Conflicts & Matching
+      {/* Conflict Resolution */}
+      <Card className="border-[#D8C2AA] bg-[#FFF8ED] shadow-md overflow-hidden">
+        <CardHeader className="border-b border-[#D8C2AA] bg-[#F5EBDD] px-6 py-4">
+          <CardTitle className="text-base font-bold flex items-center gap-2 text-[#38241B]">
+            <GitBranch className="h-4.5 w-4.5 text-[#6F4028]" />
+            Field Divergence & Conflict Resolution Engine
           </CardTitle>
-          <CardDescription>Cross-source field conflicts requiring reconciliation</CardDescription>
+          <CardDescription className="text-xs text-[#755C49]">
+            Automated conflict detection across disparate departmental databases
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           {conflictIssues.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-12 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <CheckCircle2 className="h-6 w-6 text-emerald-600" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">No data conflicts detected</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Cross-source field conflicts will appear here when department data is reconciled.
-                </p>
-              </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-xs text-emerald-950">
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-700" />
+              <span>Zero field divergence detected across registered citizen profiles. 100% schema alignment achieved.</span>
             </div>
           ) : (
             <div className="space-y-3">
               {conflictIssues.map((issue) => (
-                <div key={issue.id} className="rounded-lg border bg-muted/20 p-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50">
-                        <AlertTriangle className="h-5 w-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-display font-semibold text-sm">{issue.citizenName}</h3>
-                          <Badge variant="outline" className="text-xs">{issue.field}</Badge>
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{issue.description}</p>
-                      </div>
-                    </div>
-                    {issue.matchPercentage !== undefined && (
-                      <div className={cn(
-                        'flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold',
-                        issue.matchPercentage >= 95 ? 'border-emerald-500 text-emerald-600' : 'border-amber-500 text-amber-600'
-                      )}>
-                        {issue.matchPercentage}%
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-2">
-                    <Badge variant="outline" className={cn(
-                      issue.status === 'open' ? 'border-red-200 bg-red-50 text-red-600' : 'border-amber-200 bg-amber-50 text-amber-600'
-                    )}>
-                      {issue.status === 'open' ? 'Needs Reconciliation' : 'Under Review'}
+                <div key={issue.id} className="rounded-xl border border-[#D8C2AA] bg-[#FFF8ED] p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs text-[#38241B]">{issue.citizenName}</span>
+                    <Badge variant="outline" className="text-xs font-bold border-[#C58B55] bg-[#C58B55]/15 text-[#6F4028]">
+                      Conflict Detected
                     </Badge>
                   </div>
+                  <p className="text-xs text-[#755C49]">{issue.description}</p>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
-
-      <div className="flex items-center justify-end">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/admin/dashboard')} className="gap-1">
-          <ArrowRight className="h-3.5 w-3.5 rotate-180" />
-          Back to Dashboard
-        </Button>
-      </div>
     </div>
   );
 }

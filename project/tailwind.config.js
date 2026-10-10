@@ -10,6 +10,9 @@ export default {
   theme: {
     extend: {
       borderRadius: {
+        '3xl': '1.5rem',
+        '2xl': '1rem',
+        xl: '0.75rem',
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
@@ -56,17 +59,44 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
-        saffron: {
-          DEFAULT: 'hsl(var(--saffron))',
-          light: 'hsl(var(--saffron-light))',
+        // Premium Chocolate Brown + Cream System
+        chocolate: {
+          DEFAULT: '#6F4028',
+          deep: '#2B1B14',
+          mocha: '#4A2E22',
+          dark: '#38241B',
+          hover: '#805236',
+          light: '#8C5638',
         },
+        cream: {
+          DEFAULT: '#F5EBDD',
+          ivory: '#FFF9F0',
+          light: '#FFF8ED',
+          warm: '#F5EBDD',
+          beige: '#E8D5BF',
+          hover: '#EAD8C2',
+        },
+        caramel: {
+          DEFAULT: '#C58B55',
+          gold: '#C58B55',
+          light: '#D4A373',
+          dark: '#A86F3E',
+        },
+        'soft-border': '#E8D5BF',
         chart: {
-          1: 'hsl(var(--chart-1))',
-          2: 'hsl(var(--chart-2))',
-          3: 'hsl(var(--chart-3))',
-          4: 'hsl(var(--chart-4))',
-          5: 'hsl(var(--chart-5))',
+          1: '#6F4028',
+          2: '#C58B55',
+          3: '#4A2E22',
+          4: '#786453',
+          5: '#E8D5BF',
         },
+      },
+      boxShadow: {
+        'luxury-sm': '0 2px 8px -1px rgba(43, 27, 20, 0.06), 0 1px 3px -1px rgba(43, 27, 20, 0.04)',
+        'luxury': '0 8px 24px -4px rgba(43, 27, 20, 0.08), 0 3px 8px -2px rgba(43, 27, 20, 0.04)',
+        'luxury-lg': '0 20px 45px -10px rgba(43, 27, 20, 0.12), 0 8px 16px -4px rgba(43, 27, 20, 0.06)',
+        'luxury-glow': '0 0 30px -5px rgba(197, 139, 85, 0.35)',
+        'gold-sm': '0 0 12px -2px rgba(197, 139, 85, 0.25)',
       },
       fontFamily: {
         sans: ['IBM Plex Sans', 'system-ui', 'sans-serif'],
@@ -81,10 +111,20 @@ export default {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-6px)' },
+        },
+        pulseGlow: {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '0.85' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'float-slow': 'float 5s ease-in-out infinite',
+        'pulse-glow': 'pulseGlow 3s ease-in-out infinite',
       },
     },
   },

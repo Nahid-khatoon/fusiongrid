@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import {
   HeartPulse, CheckCircle2, AlertTriangle, XCircle, Wrench,
-  Activity, ArrowRight,
+  Activity, ArrowRight, Shield, Server, Clock, Cpu,
+  Sparkles,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -9,6 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { systemHealthItems } from '@/data/adminData';
 import { useApp } from '@/context/AppContext';
 import type { SystemHealthStatus } from '@/types';
@@ -19,10 +21,10 @@ interface SystemHealthProps {
 }
 
 const statusConfig: Record<SystemHealthStatus, { label: string; icon: typeof CheckCircle2; color: string; bg: string; border: string; dot: string }> = {
-  operational: { label: 'Operational', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  degraded: { label: 'Degraded', icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', dot: 'bg-amber-500' },
-  down: { label: 'Down', icon: XCircle, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', dot: 'bg-red-500' },
-  maintenance: { label: 'Maintenance', icon: Wrench, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', dot: 'bg-blue-500' },
+  operational: { label: 'Operational', icon: CheckCircle2, color: 'text-emerald-800', bg: 'bg-emerald-100', border: 'border-emerald-300', dot: 'bg-emerald-600' },
+  degraded: { label: 'Degraded', icon: AlertTriangle, color: 'text-[#C58B55]', bg: 'bg-[#C58B55]/15', border: 'border-[#D8C2AA]', dot: 'bg-[#C58B55]' },
+  down: { label: 'Down', icon: XCircle, color: 'text-rose-800', bg: 'bg-rose-100', border: 'border-rose-300', dot: 'bg-rose-600' },
+  maintenance: { label: 'Maintenance', icon: Wrench, color: 'text-[#6F4028]', bg: 'bg-[#F5EBDD]', border: 'border-[#D8C2AA]', dot: 'bg-[#6F4028]' },
 };
 
 const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -125,9 +127,6 @@ export function SystemHealth({ navigate }: SystemHealthProps) {
     maintenance: healthItems.filter((s) => s.status === 'maintenance').length,
   }), [healthItems]);
 
-  const revenueFailure = apiFailures.find((f) => f.department === 'Revenue Department');
-  const revenueIsDown = !!revenueFailure?.isDown && revenueFailure.retryState !== 'recovered';
-
   const latencyData = healthItems
     .filter((s) => s.status !== 'maintenance')
     .map((s) => ({
@@ -136,147 +135,134 @@ export function SystemHealth({ navigate }: SystemHealthProps) {
       errorRate: s.errorRate,
     }));
 
-  const overallState: SystemHealthStatus = counts.down > 0
-    ? 'down'
-    : counts.degraded > 0
-      ? 'degraded'
-      : 'operational';
-
-  const overallCfg = statusConfig[overallState];
-  const OverallIcon = overallCfg.icon;
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6 animate-fade-in-up">
-        <h1 className="font-display text-2xl font-bold tracking-tight">System Health</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Live health derived from FusionGrid API events, failures, and connector activity.
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 bg-[#F5EBDD] text-[#38241B]">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl border border-[#D8C2AA] bg-gradient-to-br from-[#2B1B14] via-[#38241B] to-[#21140F] p-8 text-[#FFF8ED] shadow-xl shadow-[#2B1B14]/15">
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 hero-grid-pattern opacity-20" />
+        <div className="pointer-events-none absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-[#C58B55]/20 blur-3xl" />
 
-      <Card className={cn('mb-6 border-border/60 animate-fade-in-up', overallState !== 'operational' && overallCfg.border)}>
-        <CardContent className="flex items-center gap-4 p-5">
-          <div className={cn('flex h-14 w-14 items-center justify-center rounded-xl', overallCfg.bg)}>
-            <OverallIcon className={cn('h-7 w-7', overallCfg.color)} />
-          </div>
+        <div className="relative z-10 flex flex-col justify-between gap-6 md:flex-row md:items-center">
           <div>
-            <h2 className="font-display text-lg font-bold">
-              {counts.down > 0 ? 'System Down — Active Failure' : counts.degraded > 0 ? 'Some Systems Degraded' : 'All Systems Operational'}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {counts.operational} operational · {counts.degraded} degraded · {counts.down} down · {counts.maintenance} maintenance
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#C58B55]/40 bg-[#C58B55]/15 px-3 py-1 font-mono text-[11px] font-semibold text-[#C58B55] mb-2">
+              <Server className="h-3.5 w-3.5" />
+              HIGH-AVAILABILITY CLUSTER TELEMETRY
+            </div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-[#FFF8ED] sm:text-3xl">
+              Platform & Microservice Health Center
+            </h1>
+            <p className="mt-2 max-w-2xl text-xs text-[#D8C2AA] sm:text-sm leading-relaxed">
+              Real-time heartbeat indicators, connection pool metrics, and latency percentiles across microservices.
+              Targeting 99.95% uptime across all state gateways.
             </p>
           </div>
-        </CardContent>
-      </Card>
 
-      {revenueIsDown && (
-        <Card className="mb-6 border-red-200 bg-red-50/50 animate-fade-in-up">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
-              <div>
-                <p className="text-sm font-semibold text-red-900">Revenue API is DOWN</p>
-                <p className="mt-1 text-xs text-red-700">{revenueFailure?.message}</p>
-                <p className="mt-1 text-xs text-blue-700">{revenueFailure?.citizenMessage}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Request ID: {revenueFailure?.requestId}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          <Button
+            onClick={() => navigate('/admin/dashboard')}
+            className="gap-2 bg-gradient-to-r from-[#C58B55] to-[#A06D3B] text-white hover:from-[#B57C48] hover:to-[#8E5E30] font-bold shadow-md border-0 self-start md:self-auto"
+          >
+            Control Center Dashboard
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
-      <Card className="mb-6 border-border/60 animate-fade-in-up">
-        <CardHeader>
-          <CardTitle className="text-base">Latency & Error Rate by Service</CardTitle>
-          <CardDescription>
-            Error rates update from live FusionGrid events. Latency uses the configured service baseline until request-level latency telemetry is recorded.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={latencyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(210 40% 90%)" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(210 40% 50%)" angle={-20} textAnchor="end" height={60} />
-              <YAxis yAxisId="left" tick={{ fontSize: 11 }} stroke="hsl(210 40% 50%)" unit="ms" />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} stroke="hsl(210 40% 50%)" unit="%" />
-              <Tooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
-              <Bar yAxisId="left" dataKey="latency" fill="hsl(210 80% 50%)" radius={[4, 4, 0, 0]} name="Latency (ms)" />
-              <Bar yAxisId="right" dataKey="errorRate" fill="hsl(0 72% 51%)" radius={[4, 4, 0, 0]} name="Error Rate (%)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-fade-in-up">
-        {healthItems.map((item) => {
-          const cfg = statusConfig[item.status];
-          const liveItem = item as typeof item & { liveRequests: number; liveFailures: number };
+      {/* Summary 4 Status Tiers */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {(['operational', 'degraded', 'down', 'maintenance'] as SystemHealthStatus[]).map((s) => {
+          const cfg = statusConfig[s];
+          const Icon = cfg.icon;
 
           return (
-            <Card key={item.id} className={cn('border-border/60', item.status !== 'operational' && cfg.border)}>
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', cfg.bg)}>
-                      <HeartPulse className={cn('h-5 w-5', cfg.color)} />
-                    </div>
-                    <div>
-                      <h3 className="font-display font-semibold">{item.name}</h3>
-                      <p className="text-xs text-muted-foreground">{item.apiCount} API{item.apiCount > 1 ? 's' : ''}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={cn('h-2 w-2 rounded-full', cfg.dot)} />
-                    <Badge variant="outline" className={cn(cfg.bg, cfg.color)}>{cfg.label}</Badge>
-                  </div>
+            <Card key={s} className="border-[#D8C2AA] bg-[#FFF8ED] shadow-sm">
+              <CardContent className="flex items-center gap-4 p-5">
+                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border', cfg.bg, cfg.border)}>
+                  <Icon className={cn('h-6 w-6', cfg.color)} />
                 </div>
-
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg border bg-muted/30 p-2">
-                    <p className="text-sm font-bold">{item.uptime > 0 ? `${item.uptime}%` : '—'}</p>
-                    <p className="text-[10px] text-muted-foreground">Uptime</p>
-                  </div>
-                  <div className="rounded-lg border bg-muted/30 p-2">
-                    <p className="text-sm font-bold">{item.latency > 0 ? `${item.latency}ms` : '—'}</p>
-                    <p className="text-[10px] text-muted-foreground">Latency</p>
-                  </div>
-                  <div className="rounded-lg border bg-muted/30 p-2">
-                    <p className={cn('text-sm font-bold', item.errorRate > 5 && 'text-red-600', item.errorRate > 1 && item.errorRate <= 5 && 'text-amber-600')}>
-                      {item.errorRate < 100 ? `${item.errorRate}%` : '—'}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Errors</p>
-                  </div>
+                <div>
+                  <p className="font-display text-2xl font-bold text-[#38241B]">{counts[s]}</p>
+                  <p className="text-xs font-semibold text-[#755C49]">{cfg.label}</p>
                 </div>
-
-                <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Activity className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{item.lastIncident}</span>
-                  </div>
-                  {liveItem.liveRequests > 0 && (
-                    <Badge variant="secondary" className="shrink-0 text-[10px]">
-                      {liveItem.liveRequests} live
-                    </Badge>
-                  )}
-                </div>
-
-                {liveItem.liveFailures > 0 && (
-                  <p className="mt-2 text-xs text-red-600">
-                    {liveItem.liveFailures} live failure{liveItem.liveFailures === 1 ? '' : 's'} recorded
-                  </p>
-                )}
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      <div className="mt-4 flex items-center justify-end">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/admin/dashboard')} className="gap-1">
-          <ArrowRight className="h-3.5 w-3.5 rotate-180" />
-          Back to Dashboard
-        </Button>
+      {/* Latency and Error Rate Bar Charts */}
+      <Card className="border-[#D8C2AA] bg-[#FFF8ED] shadow-md overflow-hidden">
+        <CardHeader className="border-b border-[#D8C2AA] bg-[#F5EBDD] px-6 py-4">
+          <CardTitle className="text-base font-bold text-[#38241B]">Subsystem Latency & Response Quality (ms)</CardTitle>
+          <CardDescription className="text-xs text-[#755C49]">Monitored roundtrip packet latency per service cluster</CardDescription>
+        </CardHeader>
+        <CardContent className="p-6">
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={latencyData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#D8C2AA" strokeOpacity={0.6} vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#755C49', fontWeight: 600 }} stroke="#D8C2AA" />
+              <YAxis tick={{ fontSize: 11, fill: '#755C49' }} stroke="#D8C2AA" unit="ms" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#FFF8ED',
+                  borderColor: '#D8C2AA',
+                  borderRadius: '14px',
+                  fontSize: '12px',
+                  color: '#38241B',
+                }}
+              />
+              <Bar dataKey="latency" radius={[8, 8, 0, 0]} fill="#C58B55" name="Response (ms)" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Microservice Health Cards */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {healthItems.map((item) => {
+          const cfg = statusConfig[item.status];
+          const Icon = cfg.icon;
+
+          return (
+            <Card key={item.name} className="border-[#D8C2AA] bg-[#FFF8ED] shadow-sm transition-all hover:border-[#6F4028] hover:shadow-xl overflow-hidden">
+              <div className="h-1 w-full bg-gradient-to-r from-[#6F4028] via-[#C58B55] to-emerald-600" />
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-bold text-sm text-[#38241B]">{item.name}</h3>
+                    <p className="font-mono text-xs text-[#755C49] mt-0.5">{item.apiCount} APIs • {item.id}</p>
+                  </div>
+                  <Badge variant="outline" className={cn('gap-1 text-xs font-bold', cfg.border, cfg.bg, cfg.color)}>
+                    <span className={cn('h-1.5 w-1.5 rounded-full', cfg.dot)} />
+                    {cfg.label}
+                  </Badge>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-[#755C49] font-medium">Rolling Uptime</span>
+                    <span className="font-mono font-bold text-[#38241B]">{item.uptime}%</span>
+                  </div>
+                  <Progress value={item.uptime} className="h-2 rounded-full bg-[#F5EBDD] [&>div]:bg-[#6F4028]" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs border-t border-[#D8C2AA]/40 pt-3">
+                  <div>
+                    <span className="text-[#755C49] text-[11px] font-medium">Roundtrip Latency</span>
+                    <p className="font-mono font-bold text-[#38241B] mt-0.5">{item.latency}ms</p>
+                  </div>
+                  <div>
+                    <span className="text-[#755C49] text-[11px] font-medium">Error Rate</span>
+                    <p className="font-mono font-bold text-[#38241B] mt-0.5">{item.errorRate}%</p>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-[#755C49] truncate border-t border-[#D8C2AA]/40 pt-2 font-mono">
+                  Latest: {item.lastIncident}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
